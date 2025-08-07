@@ -1,3 +1,13 @@
+# Arquivos de configuração específicos de ambiente
+nginx/conf.d/app-*.conf
+
+# Dados das aplicações (podem ser repositórios separados)
+apps/*/
+!apps/.gitkeep
+
+# Dados dos bancos (não versionar em produção)
+/sistemas/
+
 # Arquivos de ambiente
 .env
 .env.local
@@ -12,9 +22,6 @@ nginx/ssl/*.pem
 nginx/ssl/*.key
 nginx/ssl/*.crt
 
-# Dados dos bancos (não versionar em produção)
-/sistemas/
-
 # Backups
 backups/
 *.sql
@@ -23,15 +30,12 @@ backups/
 # Docker
 .docker/
 
-# Aplicações (podem ser repositórios separados)
-apps/*/
-!apps/.gitkeep
-
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-*
 
 # OS
 .DS_Store
@@ -40,6 +44,9 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+*.tmp
+*~
+.cache/
 
 # Node.js (se houver frontend)
 node_modules/
@@ -50,3 +57,7 @@ yarn-error.log*
 # PHP
 vendor/
 composer.lock
+
+# Backup files
+*.bak
+*.backup

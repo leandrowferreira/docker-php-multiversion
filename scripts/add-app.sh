@@ -34,14 +34,17 @@ show_help() {
     echo "Opções:"
     echo "  --www          Adicionar redirect www -> não-www"
     echo "  --subdomain    Tratar como subdomínio (app.exemplo.com)"
-    echo "  --no-ssl       Não configurar SSL (apenas HTTP)"
+    echo "  --ssl          Configurar SSL/HTTPS (usar após configurar certificados)"
+    echo "  --no-ssl       Forçar apenas HTTP (padrão)"
     echo "  --laravel      Configurar especificamente para Laravel"
     echo "  -h, --help     Mostrar esta ajuda"
     echo ""
+    echo "⚠️  PADRÃO: Cria apenas HTTP. Use --ssl após configurar certificados."
+    echo ""
     echo "Exemplos:"
-    echo "  $0 loja php84 minhaloja.com --www"
-    echo "  $0 blog php74 blog.exemplo.com --subdomain"
-    echo "  $0 sistema-antigo php56 legado.cliente.com --laravel"
+    echo "  $0 loja php84 minhaloja.com --www           # HTTP com redirect www"
+    echo "  $0 blog php74 blog.exemplo.com --subdomain  # HTTP simples"
+    echo "  $0 app php84 app.com --ssl                   # HTTPS (certificados já configurados)"
     echo ""
 }
 
@@ -51,7 +54,7 @@ PHP_VERSION=""
 DOMAIN=""
 INCLUDE_WWW=false
 IS_SUBDOMAIN=false
-NO_SSL=false
+NO_SSL=true      # Padrão: apenas HTTP (SSL adicionado posteriormente)
 IS_LARAVEL=true  # Padrão para Laravel
 
 # Parse dos argumentos
@@ -63,6 +66,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --subdomain)
             IS_SUBDOMAIN=true
+            shift
+            ;;
+        --ssl)
+            NO_SSL=false
             shift
             ;;
         --no-ssl)
@@ -125,26 +132,66 @@ info "PHP: $PHP_VERSION"
 info "Domínio: $DOMAIN"
 info "Incluir www: $INCLUDE_WWW"
 info "Subdomínio: $IS_SUBDOMAIN"
-info "SSL: $([ "$NO_SSL" = true ] && echo "Não" || echo "Sim")"
+info "SSL: $([ "$NO_SSL" = true ] && echo "HTTP apenas (padrão)" || echo "HTTPS habilitado")"
 info "Laravel: $IS_LARAVEL"
 echo ""
 
-# Criar diretório da aplicação
-APP_DIR="/sistemas/apps/$PHP_VERSION/$APP_NAME"
+# Detectar ambiente (desenvolvimento vs produção)
+if [ -f "docker-compose.dev.yml" ] && [ -d "apps" ]; then
+    # Ambiente de desenvolvimento
+    APP_DIR="./apps/$PHP_VERSION/$APP_NAME"
+    ENV_TYPE="desenvolvimento"
+    info "Ambiente detectado: DESENVOLVIMENTO"
+else
+    # Ambiente de produção
+    APP_DIR="/sistemas/apps/$PHP_VERSION/$APP_NAME"
+    ENV_TYPE="produção"
+    info "Ambiente detectado: PRODUÇÃO"
+fi
+
 info "Criando diretório: $APP_DIR"
 
-if [ ! -d "/sistemas" ]; then
+# Verificar se diretório base existe
+if [ "$ENV_TYPE" = "produção" ] && [ ! -d "/sistemas" ]; then
     error "Diretório /sistemas não existe. Execute: scripts/setup-directories.sh"
+    exit 1
+elif [ "$ENV_TYPE" = "desenvolvimento" ] && [ ! -d "apps" ]; then
+    error "Diretório ./apps não existe. Execute no diretório correto do projeto"
     exit 1
 fi
 
-sudo mkdir -p "$APP_DIR"
-sudo chown -R $USER:$USER "$APP_DIR"
+# Criar diretório com permissões apropriadas
+if [ "$ENV_TYPE" = "produção" ]; then
+    sudo mkdir -p "$APP_DIR"
+    sudo chown -R $USER:$USER "$APP_DIR"
+else
+    mkdir -p "$APP_DIR"
+fi
 success "Diretório criado: $APP_DIR"
 
+# Verificar se é uma estrutura Laravel existente
+is_laravel_existing() {
+    local app_dir="$1"
+    
+    # Verificar arquivos/diretórios essenciais do Laravel
+    if [ -f "$app_dir/artisan" ] || \
+       [ -f "$app_dir/composer.json" ] || \
+       [ -d "$app_dir/app" ] || \
+       [ -d "$app_dir/config" ] || \
+       [ -d "$app_dir/routes" ] || \
+       [ -f "$app_dir/public/index.php" ]; then
+        return 0  # É Laravel existente
+    else
+        return 1  # Não é Laravel ou não existe
+    fi
+}
+
 # Criar estrutura Laravel básica se não existir
-if [ "$IS_LARAVEL" = true ] && [ ! -f "$APP_DIR/public/index.php" ]; then
-    info "Criando estrutura Laravel básica..."
+if [ "$IS_LARAVEL" = true ]; then
+    if is_laravel_existing "$APP_DIR"; then
+        success "Estrutura Laravel já existe, mantendo arquivos existentes"
+    else
+        info "Criando estrutura Laravel básica..."
     
     mkdir -p "$APP_DIR/public"
     mkdir -p "$APP_DIR/storage/logs"
@@ -190,6 +237,7 @@ REDIS_PORT=6379
 EOF
 
     success "Estrutura Laravel criada"
+    fi
 fi
 
 # Determinar configuração de domínios
@@ -198,249 +246,91 @@ if [ "$INCLUDE_WWW" = true ]; then
     DOMAINS="$DOMAIN www.$DOMAIN"
 fi
 
-# Criar configuração do Nginx
+# Criar configuração do Nginx usando templates
 NGINX_CONF="nginx/conf.d/app-$APP_NAME.conf"
+
+# Escolher template baseado na configuração SSL
+if [ "$NO_SSL" = true ]; then
+    TEMPLATE_FILE="nginx/templates/$PHP_VERSION-http-template.conf"
+else
+    TEMPLATE_FILE="nginx/templates/$PHP_VERSION-https-template.conf"
+fi
+
 info "Criando configuração Nginx: $NGINX_CONF"
+info "Usando template: $TEMPLATE_FILE"
 
-# Configuração HTTP (sempre necessária para Let's Encrypt)
-cat > "$NGINX_CONF" << EOF
-# $APP_NAME - $DOMAIN
-# Gerado automaticamente em $(date)
+# Verificar se o template existe
+if [ ! -f "$TEMPLATE_FILE" ]; then
+    error "Template não encontrado: $TEMPLATE_FILE"
+    exit 1
+fi
 
-EOF
+# Copiar template e fazer substituições
+cp "$TEMPLATE_FILE" "$NGINX_CONF"
 
-# Adicionar redirecionamento www se necessário
+# Substituir variáveis no template
+sed -i "s/{{APP_NAME}}/$APP_NAME/g" "$NGINX_CONF"
+sed -i "s/{{DOMAIN}}/$DOMAIN/g" "$NGINX_CONF"
+sed -i "s/{{PHP_VERSION}}/$PHP_VERSION/g" "$NGINX_CONF"
+
+# Adicionar cabeçalho com informações da criação
+sed -i "1i# Aplicação: $APP_NAME" "$NGINX_CONF"
+sed -i "2i# Domínio: $DOMAIN" "$NGINX_CONF"
+sed -i "3i# PHP: $PHP_VERSION" "$NGINX_CONF"
+sed -i "4i# Gerado automaticamente em $(date)" "$NGINX_CONF"
+sed -i "5i# Template: $TEMPLATE_FILE" "$NGINX_CONF"
+sed -i "6i#" "$NGINX_CONF"
+
+# Configurações específicas baseadas nas opções
 if [ "$INCLUDE_WWW" = true ]; then
-    cat >> "$NGINX_CONF" << EOF
-# Redirect www to non-www
+    # Adicionar redirecionamento www antes do primeiro server block
+    if [ "$NO_SSL" = true ]; then
+        WWW_REDIRECT="# Redirect www to non-www (HTTP)
 server {
     listen 80;
     server_name www.$DOMAIN;
     return 301 http://$DOMAIN\$request_uri;
 }
 
-EOF
+"
+    else
+        WWW_REDIRECT="# Redirect www to non-www
+server {
+    listen 80;
+    server_name www.$DOMAIN;
+    return 301 http://$DOMAIN\$request_uri;
+}
 
-    if [ "$NO_SSL" = false ]; then
-        cat >> "$NGINX_CONF" << EOF
 server {
     listen 443 ssl http2;
     server_name www.$DOMAIN;
     return 301 https://$DOMAIN\$request_uri;
     
-    # SSL Configuration (será configurado pelo Let's Encrypt)
     ssl_certificate /etc/nginx/ssl/cert.pem;
     ssl_certificate_key /etc/nginx/ssl/key.pem;
 }
 
-EOF
+"
     fi
-fi
-
-# Servidor principal HTTP
-cat >> "$NGINX_CONF" << EOF
-server {
-    listen 80;
-    server_name $DOMAIN;
-EOF
-
-if [ "$NO_SSL" = false ]; then
-    cat >> "$NGINX_CONF" << EOF
     
-    # Redirect HTTP to HTTPS
-    return 301 https://\$server_name\$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name $DOMAIN;
-EOF
+    # Inserir antes do primeiro server block ou comentário de configuração
+    sed -i "/^# Configuração HTTP principal\|^# Redirect HTTP para HTTPS/i $WWW_REDIRECT" "$NGINX_CONF"
 fi
-
-# Configuração principal do servidor
-cat >> "$NGINX_CONF" << EOF
-    
-    root /var/www/html/$PHP_VERSION/$APP_NAME/public;
-    index index.php index.html index.htm;
-
-    # SSL Configuration (será atualizada pelo Let's Encrypt)
-EOF
-
-if [ "$NO_SSL" = false ]; then
-    cat >> "$NGINX_CONF" << EOF
-    ssl_certificate /etc/nginx/ssl/cert.pem;
-    ssl_certificate_key /etc/nginx/ssl/key.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384;
-    ssl_prefer_server_ciphers off;
-    ssl_session_cache shared:SSL:10m;
-
-    # Security headers
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
-EOF
-fi
-
-cat >> "$NGINX_CONF" << EOF
-
-    # Rate limiting
-    limit_req zone=login burst=20 nodelay;
-
-    # Laravel specific configuration
-EOF
-
-if [ "$IS_LARAVEL" = true ]; then
-    cat >> "$NGINX_CONF" << EOF
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
-EOF
-else
-    cat >> "$NGINX_CONF" << EOF
-    location / {
-        try_files \$uri \$uri/ =404;
-    }
-EOF
-fi
-
-cat >> "$NGINX_CONF" << EOF
-
-    location ~ \.php\$ {
-        fastcgi_split_path_info ^(.+\.php)(/.+)\$;
-        fastcgi_pass laravel-$PHP_VERSION:9000;
-        fastcgi_index index.php;
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-        fastcgi_param PATH_INFO \$fastcgi_path_info;
-        
-        # Timeouts
-        fastcgi_connect_timeout 60s;
-        fastcgi_send_timeout 60s;
-        fastcgi_read_timeout 60s;
-        
-        # Buffer settings
-        fastcgi_buffer_size 128k;
-        fastcgi_buffers 4 256k;
-        fastcgi_busy_buffers_size 256k;
-    }
-
-    # Static files
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|pdf|txt|woff|woff2|ttf|svg)\$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        try_files \$uri =404;
-    }
-
-    # Deny access to sensitive files
-    location ~ /\.ht {
-        deny all;
-    }
-    
-    location ~ /\.(env|git) {
-        deny all;
-    }
-
-EOF
-
-if [ "$IS_LARAVEL" = true ]; then
-    cat >> "$NGINX_CONF" << EOF
-    # Laravel specific
-    location ~ ^/(storage|bootstrap/cache)/ {
-        deny all;
-    }
-EOF
-fi
-
-cat >> "$NGINX_CONF" << EOF
-}
-EOF
-
-success "Configuração Nginx criada"
-    listen 443 ssl http2;
-    server_name $DOMAIN;
-    
-    root /var/www/html/$PHP_VERSION/$APP_NAME/public;
-    index index.php index.html index.htm;
-
-    # SSL Configuration
-    ssl_certificate /etc/nginx/ssl/cert.pem;
-    ssl_certificate_key /etc/nginx/ssl/key.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384;
-    ssl_prefer_server_ciphers off;
-    ssl_session_cache shared:SSL:10m;
-
-    # Security headers
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
-
-    # Rate limiting
-    limit_req zone=login burst=20 nodelay;
-
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass app-$PHP_VERSION:9000;
-        fastcgi_index index.php;
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-        fastcgi_param PATH_INFO \$fastcgi_path_info;
-        
-        # Timeouts
-        fastcgi_connect_timeout 60s;
-        fastcgi_send_timeout 60s;
-        fastcgi_read_timeout 60s;
-        
-        # Buffer settings
-        fastcgi_buffer_size 128k;
-        fastcgi_buffers 4 256k;
-        fastcgi_busy_buffers_size 256k;
-    }
-
-    # Static files
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|pdf|txt)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        try_files \$uri =404;
-    }
-
-    # Deny access to sensitive files
-    location ~ /\.ht {
-        deny all;
-    }
-    
-    location ~ /\.(env|git) {
-        deny all;
-    }
-
-    # Laravel specific
-    location ~ ^/(storage|bootstrap/cache)/ {
-        deny all;
-    }
-}
-EOF
 
 success "Configuração Nginx criada"
 
 # Recarregar configuração do Nginx
 info "Recarregando Nginx..."
 if docker ps | grep -q nginx-proxy; then
-    if docker exec nginx-proxy nginx -t; then
-        docker exec nginx-proxy nginx -s reload
-        success "Nginx recarregado com sucesso"
-    else
-        error "Erro na configuração do Nginx"
-        warning "Verifique o arquivo: $NGINX_CONF"
-        exit 1
-    fi
+    docker exec nginx-proxy nginx -s reload
+    success "Nginx recarregado"
 else
     warning "Container nginx-proxy não está rodando"
     warning "Execute: docker-compose up -d nginx"
 fi
 
 echo ""
-echo "🎉 Aplicação '$APP_NAME' adicionada com sucesso!"
+echo "�� Aplicação '$APP_NAME' adicionada com sucesso!"
 echo ""
 info "📋 Próximos passos:"
 echo "   1. Coloque o código da aplicação em: $APP_DIR"
@@ -450,9 +340,12 @@ if [ "$INCLUDE_WWW" = true ]; then
     echo "   3. Configure também www.$DOMAIN para o IP da EC2"
 fi
 
-if [ "$NO_SSL" = false ]; then
-    echo "   4. Configure SSL com Let's Encrypt:"
-    echo "      ./scripts/setup-letsencrypt.sh -e seu@email.com $DOMAINS"
+if [ "$NO_SSL" = true ]; then
+    echo "   4. 🔒 Para adicionar SSL/HTTPS:"
+    echo "      ./scripts/setup-ssl.sh $APP_NAME $DOMAINS"
+    echo "      (Configurará Let's Encrypt automaticamente)"
+else
+    echo "   4. ✅ SSL já configurado - verifique certificados"
 fi
 
 if [ "$IS_LARAVEL" = true ]; then
