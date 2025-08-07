@@ -24,10 +24,14 @@ nginx/ssl/*.pem
 nginx/ssl/*.key
 nginx/ssl/*.crt
 
-# Backups
+# Backups (mas não os scripts de inicialização)
 backups/
-*.sql
-*.sql.gz
+*.backup.sql
+*.dump.sql
+*-backup.sql
+
+# Excluir arquivos SQL de backup, mas manter scripts de inicialização
+!mysql/init/*.sql
 
 # Docker
 .docker/
@@ -39,3 +43,6 @@ backups/
 # Backup files
 *.bak
 *.backup
+
+# Arquivos e diretórios a serem ignorados pelo Git
+!**/.gitkeep
