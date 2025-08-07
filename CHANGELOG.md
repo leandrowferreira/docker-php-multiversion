@@ -5,6 +5,42 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.2.0] - 2025-08-07
+
+### Adicionado
+- **PHP 8.4** como nova versão principal (mais recente disponível)
+- **Sistema de documentação de prompts** em formato Markdown
+- **Registro histórico completo** de desenvolvimento no diretório `/prompts`
+- **Links funcionais** na documentação para navegação
+
+### Alterado
+- **BREAKING**: PHP 8.1 removido, substituído por PHP 8.4
+- **Versões PHP suportadas**: 8.4, 7.4, 5.6 (em vez de 8.1, 7.4, 5.6)
+- **Estrutura Docker**: `docker/php81/` → `docker/php84/`
+- **Container**: `laravel-php81` → `laravel-php84`
+- **Volumes**: `/sistemas/apps/php81/` → `/sistemas/apps/php84/`
+- **Configuração Nginx**: `app-php81.conf` → `app-php84.conf`
+- **Comandos Makefile**: `logs-php81` → `logs-php84`, `shell-php81` → `shell-php84`
+- **Documentação**: Convertida para Markdown com links clicáveis
+- **Scripts**: Validação e exemplos atualizados para PHP 8.4
+
+### Removido
+- **PHP 8.1**: Container, configurações e referências
+- **Comando automático de prompts** do Makefile (simplificação)
+
+### Melhorado
+- **Performance**: PHP 8.4 oferece melhorias significativas
+- **Compatibilidade**: Mantido suporte para aplicações legadas (5.6, 7.4)
+- **Documentação**: Formato Markdown para melhor renderização
+- **Organização**: Sistema estruturado de registro de desenvolvimento
+
+### Migração
+Para migrar aplicações existentes:
+1. Reconstruir container: `docker-compose build app-php84`
+2. Mover aplicações: `/sistemas/apps/php81/` → `/sistemas/apps/php84/`
+3. Testar compatibilidade com PHP 8.4
+4. Atualizar configurações se necessário
+
 ## [1.0.0] - 2025-08-07
 
 ### Adicionado
@@ -80,8 +116,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - ✅ Backup e restore de dados
 - ✅ Monitoramento e logs
 
+### Histórico de Versões
+- **v1.2.0**: Migração para PHP 8.4 + Sistema de documentação
+- **v1.1.0**: Let's Encrypt automático + Melhorias de routing
+- **v1.0.0**: Sistema completo inicial
+
 ### Próximas Versões Planejadas
-- **v1.1.0**: Integração com GitHub Actions para deploy automático
-- **v1.2.0**: Dashboard de monitoramento web
-- **v1.3.0**: Suporte a PostgreSQL
+- **v1.3.0**: Dashboard de monitoramento web
+- **v1.4.0**: Suporte a PostgreSQL
 - **v2.0.0**: Kubernetes migration path
