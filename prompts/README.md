@@ -46,5 +46,5 @@ Processo manual de registro de prompts relevantes:
 ---
 
 **Iniciado em**: 7 de agosto de 2025  
-**Versão atual**: v1.1.0  
+**Versão atual**: v1.2.0  
 **Status**: Sistema ativo de registro
