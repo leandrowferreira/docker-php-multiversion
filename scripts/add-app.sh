@@ -273,6 +273,9 @@ sed -i "s/{{APP_NAME}}/$APP_NAME/g" "$NGINX_CONF"
 sed -i "s/{{DOMAIN}}/$DOMAIN/g" "$NGINX_CONF"
 sed -i "s/{{PHP_VERSION}}/$PHP_VERSION/g" "$NGINX_CONF"
 
+# Remover comentários do template (linhas que começam com ##)
+sed -i '/^##/d' "$NGINX_CONF"
+
 # Adicionar cabeçalho com informações da criação
 sed -i "1i# Aplicação: $APP_NAME" "$NGINX_CONF"
 sed -i "2i# Domínio: $DOMAIN" "$NGINX_CONF"
