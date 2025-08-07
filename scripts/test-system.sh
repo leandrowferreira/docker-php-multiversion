@@ -47,11 +47,11 @@ fi
 echo "🔍 Verificando estrutura de arquivos..."
 required_files=(
     "docker-compose.yml"
-    "docker/php81/Dockerfile"
+    "docker/php84/Dockerfile"
     "docker/php74/Dockerfile" 
     "docker/php56/Dockerfile"
     "nginx/nginx.conf"
-    "nginx/conf.d/app-php81.conf"
+    "nginx/conf.d/app-php84.conf"
     ".env.example"
 )
 
@@ -93,7 +93,7 @@ if docker-compose ps >/dev/null 2>&1; then
         "nginx-proxy"
         "mysql8"
         "mysql57"
-        "laravel-php81"
+        "laravel-php84"
         "laravel-php74"
         "laravel-php56"
         "redis-cache"
@@ -187,4 +187,4 @@ echo "📋 Próximos passos recomendados:"
 echo "   1. Se há warnings sobre diretórios: execute 'make setup'"
 echo "   2. Se há warnings sobre containers: execute 'make start'"
 echo "   3. Para monitoramento: execute 'make monitor'"
-echo "   4. Para adicionar aplicação: execute 'make add-app APP=nome PHP=php81 DOMAIN=exemplo.com'"
+echo "   4. Para adicionar aplicação: execute 'make add-app APP=nome PHP=php84 DOMAIN=exemplo.com'"

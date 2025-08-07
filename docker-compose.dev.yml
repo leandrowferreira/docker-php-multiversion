@@ -12,7 +12,7 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl
       - ./logs/nginx:/var/log/nginx
       # Para desenvolvimento local, mapear diretórios locais
-      - ./apps/php81:/var/www/html/php81
+      - ./apps/php84:/var/www/html/php84
       - ./apps/php74:/var/www/html/php74  
       - ./apps/php56:/var/www/html/php56
 
@@ -39,12 +39,12 @@ services:
       - mysql57-dev-data:/var/lib/mysql
 
   # Aplicações com volumes locais para desenvolvimento
-  app-php81:
+  app-php84:
     volumes:
-      - ./apps/php81:/var/www/html
-      - ./logs/php81:/var/log/php
+      - ./apps/php84:/var/www/html
+      - ./logs/php84:/var/log/php
     environment:
-      - PHP_VERSION=8.1
+      - PHP_VERSION=8.4
       - APP_ENV=local
       - APP_DEBUG=true
 

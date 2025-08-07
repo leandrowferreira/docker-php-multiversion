@@ -39,13 +39,13 @@ make autostart
 ### 5. Adicionar primeira aplicação
 ```bash
 # Exemplo: adicionar uma loja online
-make add-app APP=loja PHP=php81 DOMAIN=loja.exemplo.com
+make add-app APP=loja PHP=php84 DOMAIN=loja.exemplo.com
 
 # Ou com suporte a www:
-make add-app APP=loja PHP=php81 DOMAIN=loja.exemplo.com WWW=true
+make add-app APP=loja PHP=php84 DOMAIN=loja.exemplo.com WWW=true
 
 # Colocar código da aplicação em:
-# /sistemas/apps/php81/loja/
+# /sistemas/apps/php84/loja/
 ```
 
 ### 6. Configurar SSL com Let's Encrypt
@@ -72,7 +72,7 @@ make restart                 # Reiniciar todo o sistema
 
 # Novos comandos v1.1:
 make setup-letsencrypt EMAIL=seu@email.com DOMAINS="app.com www.app.com"  # SSL automático
-make add-app APP=nome PHP=php81 DOMAIN=app.com WWW=true                   # App com www
+make add-app APP=nome PHP=php84 DOMAIN=app.com WWW=true                   # App com www
 make migrate-structure       # Reorganizar diretórios
 ```
 
@@ -80,7 +80,7 @@ make migrate-structure       # Reorganizar diretórios
 
 ### Container não inicia
 ```bash
-make logs-nginx     # ou logs-mysql8, logs-php81, etc.
+make logs-nginx     # ou logs-mysql8, logs-php84, etc.
 ```
 
 ### Aplicação não carrega
@@ -168,7 +168,7 @@ crontab -e                       # Adicionar linha:
 docker exec -i mysql8 mysql -uroot -p < /sistemas/backups/backup.sql
 
 # Restaurar aplicação
-cp -r /backup/app/ /sistemas/apps/php81/app/
+cp -r /backup/app/ /sistemas/apps/php84/app/
 ```
 
 ---
@@ -189,7 +189,7 @@ make start
 make status
 
 # 5. Adicionar app
-make add-app APP=meusite PHP=php81 DOMAIN=meusite.com
+make add-app APP=meusite PHP=php84 DOMAIN=meusite.com
 
 # Pronto! 🎉
 ```

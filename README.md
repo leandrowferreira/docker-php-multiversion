@@ -5,7 +5,7 @@ Este projeto configura um ambiente Docker completo para hospedar múltiplas apli
 ## 🏗️ Arquitetura
 
 - **Nginx**: Proxy reverso com SSL/HTTPS
-- **PHP-FPM**: Containers separados para PHP 8.1, 7.4 e 5.6
+- **PHP-FPM**: Containers separados para PHP 8.4, 7.4 e 5.6
 - **MySQL**: MySQL 8.0 (principal) e MySQL 5.7 (legado)
 - **Redis**: Cache e sessões
 - **Volumes persistentes**: Dados armazenados em `/sistemas`
@@ -71,7 +71,7 @@ docker-compose ps
 ```
 /sistemas/
 ├── apps/
-│   ├── php81/          # Aplicações PHP 8.1
+│   ├── php84/          # Aplicações PHP 8.4
 │   ├── php74/          # Aplicações PHP 7.4
 │   └── php56/          # Aplicações PHP 5.6
 ├── mysql8/
@@ -91,10 +91,10 @@ docker-compose ps
 
 ```bash
 # Sintaxe: ./add-app.sh <nome> <versao-php> <dominio>
-./scripts/add-app.sh minha-loja php81 loja.exemplo.com
+./scripts/add-app.sh minha-loja php84 loja.exemplo.com
 
 # Colocar código da aplicação em:
-# /sistemas/apps/php81/minha-loja/
+# /sistemas/apps/php84/minha-loja/
 ```
 
 ### Monitoramento
@@ -106,7 +106,7 @@ docker-compose ps
 # Logs específicos
 docker-compose logs nginx
 docker-compose logs mysql8
-docker-compose logs app-php81
+docker-compose logs app-php84
 ```
 
 ### Backup
@@ -144,7 +144,7 @@ Cada aplicação tem sua própria configuração em `nginx/conf.d/app-*.conf`. O
 | MySQL 8.0 | mysql8 | 3306 | 3306 |
 | MySQL 5.7 | mysql57 | 3307 | 3306 |
 | Redis | redis-cache | 6379 | 6379 |
-| PHP 8.1 | laravel-php81 | - | 9000 |
+| PHP 8.4 | laravel-php84 | - | 9000 |
 | PHP 7.4 | laravel-php74 | - | 9000 |
 | PHP 5.6 | laravel-php56 | - | 9000 |
 
@@ -209,7 +209,7 @@ docker-compose down
 docker-compose restart nginx
 
 # Entrar em um container
-docker exec -it laravel-php81 bash
+docker exec -it laravel-php84 bash
 
 # Ver logs em tempo real
 docker-compose logs -f nginx

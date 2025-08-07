@@ -33,7 +33,7 @@ echo ""
 echo "🔍 Logs Recentes (últimas 5 linhas)"
 echo "===================================="
 
-for container in nginx-proxy mysql8 mysql57 laravel-php81 laravel-php74 laravel-php56; do
+for container in nginx-proxy mysql8 mysql57 laravel-php84 laravel-php74 laravel-php56; do
     if docker ps --format "{{.Names}}" | grep -q "^$container$"; then
         echo "--- $container ---"
         docker logs --tail 5 "$container" 2>/dev/null || echo "Sem logs disponíveis"

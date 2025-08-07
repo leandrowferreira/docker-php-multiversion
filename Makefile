@@ -73,8 +73,8 @@ logs-mysql8: ## Logs do MySQL 8.0
 logs-mysql57: ## Logs do MySQL 5.7
 	docker-compose logs mysql57
 
-logs-php81: ## Logs do PHP 8.1
-	docker-compose logs app-php81
+logs-php84: ## Logs do PHP 8.4
+	docker-compose logs app-php84
 
 logs-php74: ## Logs do PHP 7.4
 	docker-compose logs app-php74
@@ -93,8 +93,8 @@ restart-mysql57: ## Reinicia apenas o MySQL 5.7
 	docker-compose restart mysql57
 
 # Comandos de desenvolvimento
-shell-php81: ## Entra no container PHP 8.1
-	docker exec -it laravel-php81 bash
+shell-php84: ## Entra no container PHP 8.4
+	docker exec -it laravel-php84 bash
 
 shell-php74: ## Entra no container PHP 7.4
 	docker exec -it laravel-php74 bash
@@ -113,10 +113,10 @@ autostart: ## Configura auto-start do sistema
 	./scripts/setup-autostart.sh
 
 # Adicionar aplicação com suporte a domínios e subdomínios
-add-app: ## Adiciona nova aplicação (usar: make add-app APP=nome PHP=php81 DOMAIN=exemplo.com [WWW=true])
+add-app: ## Adiciona nova aplicação (usar: make add-app APP=nome PHP=php84 DOMAIN=exemplo.com [WWW=true])
 	@if [ -z "$(APP)" ] || [ -z "$(PHP)" ] || [ -z "$(DOMAIN)" ]; then \
-		echo "❌ Uso: make add-app APP=nome PHP=php81 DOMAIN=exemplo.com"; \
-		echo "   Versões PHP: php81, php74, php56"; \
+		echo "❌ Uso: make add-app APP=nome PHP=php84 DOMAIN=exemplo.com"; \
+		echo "   Versões PHP: php84, php74, php56"; \
 		echo "   Opções: WWW=true para incluir www"; \
 		exit 1; \
 	fi

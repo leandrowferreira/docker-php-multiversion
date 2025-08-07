@@ -102,7 +102,7 @@ echo "Deploy concluído para $APP_NAME"
 ## 4. Estrutura recomendada para aplicação Laravel
 
 ```
-/sistemas/apps/php81/minha-app/
+/sistemas/apps/php84/minha-app/
 ├── app/
 ├── bootstrap/
 ├── config/
@@ -128,16 +128,16 @@ echo "Deploy concluído para $APP_NAME"
 
 ```bash
 # Limpar cache da aplicação
-docker exec laravel-php81 bash -c "cd /var/www/html/minha-app && php artisan cache:clear"
+docker exec laravel-php84 bash -c "cd /var/www/html/minha-app && php artisan cache:clear"
 
 # Executar migrações
-docker exec laravel-php81 bash -c "cd /var/www/html/minha-app && php artisan migrate"
+docker exec laravel-php84 bash -c "cd /var/www/html/minha-app && php artisan migrate"
 
 # Ver logs da aplicação
-docker exec laravel-php81 bash -c "tail -f /var/www/html/minha-app/storage/logs/laravel.log"
+docker exec laravel-php84 bash -c "tail -f /var/www/html/minha-app/storage/logs/laravel.log"
 
 # Executar comandos Artisan
-docker exec laravel-php81 bash -c "cd /var/www/html/minha-app && php artisan comando"
+docker exec laravel-php84 bash -c "cd /var/www/html/minha-app && php artisan comando"
 ```
 
 ## 6. Backup de aplicação específica

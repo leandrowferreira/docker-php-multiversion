@@ -1,7 +1,7 @@
 # 📦 Sistem## ✅ O que foi implementado:
 
 ### 🏗️ **Arquitetura Completa**
-- ✅ **Multi-PHP**: Containers para PHP 8.1, 7.4 e 5.6 simultaneamente
+- ✅ **Multi-PHP**: Containers para PHP 8.4, 7.4 e 5.6 simultaneamente
 - ✅ **Proxy Reverso**: Nginx com SSL/HTTPS configurado
 - ✅ **Bancos de Dados**: MySQL 8.0 + MySQL 5.7 (legado)
 - ✅ **Cache**: Redis para sessões e cache de aplicações
@@ -31,7 +31,7 @@
 ## 🎯 O que foi implementado
 
 ### 🏗️ **Arquitetura Completa**
-- ✅ **Multi-PHP**: Containers para PHP 8.1, 7.4 e 5.6 simultaneamente
+- ✅ **Multi-PHP**: Containers para PHP 8.4, 7.4 e 5.6 simultaneamente
 - ✅ **Proxy Reverso**: Nginx com SSL/HTTPS configurado
 - ✅ **Bancos de Dados**: MySQL 8.0 + MySQL 5.7 (legado)
 - ✅ **Cache**: Redis para sessões e cache de aplicações
@@ -78,7 +78,7 @@ make start
 make autostart
 
 # 5. Adicionar aplicação
-make add-app APP=loja PHP=php81 DOMAIN=loja.exemplo.com
+make add-app APP=loja PHP=php84 DOMAIN=loja.exemplo.com
 ```
 
 ---
@@ -92,7 +92,7 @@ migracao-aws-docker/
 ├── 📄 .env.example               # Modelo de configuração
 ├── 📄 Makefile                   # Comandos simplificados
 ├── 📁 docker/                    # Dockerfiles customizados
-│   ├── 📁 php81/
+│   ├── 📁 php84/
 │   ├── 📁 php74/
 │   └── 📁 php56/
 ├── 📁 nginx/                     # Configurações Nginx

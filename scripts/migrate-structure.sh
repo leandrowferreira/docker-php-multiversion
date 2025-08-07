@@ -53,7 +53,7 @@ sudo mkdir -p /sistemas/docker-containers
 success "Criado: /sistemas/docker-containers"
 
 # 2. Aplicações (manter estrutura por PHP)
-sudo mkdir -p /sistemas/apps/{php81,php74,php56}
+sudo mkdir -p /sistemas/apps/{php84,php74,php56}
 success "Criado: /sistemas/apps/"
 
 # 3. Bancos de dados reorganizados
@@ -151,7 +151,7 @@ services:
       - /sistemas/ssl:/etc/nginx/ssl
       - /sistemas/logs/nginx:/var/log/nginx
     depends_on:
-      - app-php81
+      - app-php84
       - app-php74
       - app-php56
     networks:
@@ -198,14 +198,14 @@ services:
       - sistemas-network
     restart: unless-stopped
 
-  # Aplicação Laravel com PHP 8.1
-  app-php81:
+  # Aplicação Laravel com PHP 8.4
+  app-php84:
     build:
-      context: ./docker/php81
+      context: ./docker/php84
       dockerfile: Dockerfile
-    container_name: laravel-php81
+    container_name: laravel-php84
     volumes:
-      - /sistemas/apps/php81:/var/www/html
+      - /sistemas/apps/php84:/var/www/html
       - /sistemas/logs/php:/var/log/php
     depends_on:
       - mysql8
@@ -213,7 +213,7 @@ services:
       - sistemas-network
     restart: unless-stopped
     environment:
-      - PHP_VERSION=8.1
+      - PHP_VERSION=8.4
 
   # Aplicação Laravel com PHP 7.4
   app-php74:
@@ -277,7 +277,7 @@ info "📁 Nova estrutura de /sistemas:"
 echo "📂 /sistemas/"
 echo "├── 🐳 docker-containers/     # Projeto Docker (códigos, scripts, configs)"
 echo "├── 📱 apps/                  # Aplicações por versão PHP"
-echo "│   ├── php81/"
+echo "│   ├── php84/"
 echo "│   ├── php74/"
 echo "│   └── php56/"
 echo "├── 🗄️  databases/             # Dados dos bancos"

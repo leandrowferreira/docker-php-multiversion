@@ -3,7 +3,7 @@
 # Script para adicionar uma nova aplicação ao sistema
 # Suporta domínios principais e subdomínios
 # Uso: ./add-app.sh <nome-da-app> <versao-php> <dominio> [--www] [--subdomain]
-# Exemplo: ./add-app.sh minha-loja php81 loja.exemplo.com --www
+# Exemplo: ./add-app.sh minha-loja php84 loja.exemplo.com --www
 
 set -e
 
@@ -28,7 +28,7 @@ show_help() {
     echo ""
     echo "Parâmetros:"
     echo "  nome-da-app    Nome da aplicação (sem espaços)"
-    echo "  versao-php     php81, php74 ou php56"
+    echo "  versao-php     php84, php74 ou php56"
     echo "  dominio        Domínio principal da aplicação"
     echo ""
     echo "Opções:"
@@ -39,7 +39,7 @@ show_help() {
     echo "  -h, --help     Mostrar esta ajuda"
     echo ""
     echo "Exemplos:"
-    echo "  $0 loja php81 minhaloja.com --www"
+    echo "  $0 loja php84 minhaloja.com --www"
     echo "  $0 blog php74 blog.exemplo.com --subdomain"
     echo "  $0 sistema-antigo php56 legado.cliente.com --laravel"
     echo ""
@@ -107,8 +107,8 @@ if [ -z "$APP_NAME" ] || [ -z "$PHP_VERSION" ] || [ -z "$DOMAIN" ]; then
 fi
 
 # Validar versão do PHP
-if [[ ! "$PHP_VERSION" =~ ^(php81|php74|php56)$ ]]; then
-    error "Versão PHP inválida. Use: php81, php74 ou php56"
+if [[ ! "$PHP_VERSION" =~ ^(php84|php74|php56)$ ]]; then
+    error "Versão PHP inválida. Use: php84, php74 ou php56"
     exit 1
 fi
 
