@@ -18,23 +18,23 @@ services:
   mysql8:
     user: "1000:1000"
     environment:
-      MYSQL_ROOT_PASSWORD: dev_root_123
-      MYSQL_DATABASE: dev_sistemas_db
-      MYSQL_USER: dev_user
-      MYSQL_PASSWORD: dev_pass
+      MYSQL_ROOT_PASSWORD: ${MYSQL8_ROOT_PASSWORD:-rootpass123}
+      MYSQL_DATABASE: ${MYSQL8_DATABASE:-app_database}
+      MYSQL_USER: ${MYSQL8_USER:-app_user}
+      MYSQL_PASSWORD: ${MYSQL8_PASSWORD:-apppass123}
     volumes:
       - ./mysql/data/mysql8:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
-    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=67108864
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=${MYSQL_INNODB_BUFFER_POOL_SIZE:-67108864}
 
   # MySQL 5.7 com configurações de desenvolvimento  
   mysql57:
     user: "1000:1000"
     environment:
-      MYSQL_ROOT_PASSWORD: dev_root_123
-      MYSQL_DATABASE: dev_legacy_db
-      MYSQL_USER: dev_legacy_user
-      MYSQL_PASSWORD: dev_legacy_pass
+      MYSQL_ROOT_PASSWORD: ${MYSQL57_ROOT_PASSWORD:-rootpass123}
+      MYSQL_DATABASE: ${MYSQL57_DATABASE:-app_database}
+      MYSQL_USER: ${MYSQL57_USER:-app_user}
+      MYSQL_PASSWORD: ${MYSQL57_PASSWORD:-apppass123}
     volumes:
       - ./mysql/data/mysql57:/var/lib/mysql
 
@@ -78,10 +78,10 @@ services:
     environment:
       PMA_HOSTS: mysql8,mysql57
       PMA_USER: root
-      PMA_PASSWORD: dev_root_123
+      PMA_PASSWORD: ${MYSQL8_ROOT_PASSWORD:-rootpass123}
       UPLOAD_LIMIT: 64M
     ports:
-      - "8080:80"
+      - "${PHPMYADMIN_PORT:-8080}:80"
     networks:
       - sistemas-network
     restart: unless-stopped

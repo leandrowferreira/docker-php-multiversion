@@ -88,6 +88,25 @@ detect_environment() {
 export ENV_TYPE=$(detect_environment)
 info "Ambiente detectado: $([ "$ENV_TYPE" = "desenvolvimento" ] && echo "DESENVOLVIMENTO" || echo "PRODUÇÃO")"
 
+# Verificar e criar arquivo .env se necessário
+setup_env_file() {
+    if [ ! -f ".env" ]; then
+        if [ -f ".env.example" ]; then
+            info "Arquivo .env não encontrado, copiando de .env.example..."
+            cp ".env.example" ".env"
+            success "Arquivo .env criado a partir do .env.example"
+            warning "⚠️  Verifique as configurações em .env antes de usar em produção!"
+        else
+            warning "Nem .env nem .env.example encontrados. Usando valores padrão dos containers."
+        fi
+    else
+        info "Arquivo .env encontrado ✅"
+    fi
+}
+
+# Executar setup do .env
+setup_env_file
+
 # Configurar diretórios baseado no ambiente
 setup_directories() {
     if [ "$ENV_TYPE" = "producao" ]; then

@@ -10,6 +10,95 @@
 
 Sistema Docker completo para desenvolvimento e produção com suporte simultâneo a múltiplas versões PHP, automação de deploy e gerenciamento unificado de aplicações.
 
+## 📑 Sumário
+
+- [💡 Motivação e Contexto](#-motivação-e-contexto)
+  - [🎯 Problema Original](#-problema-original)
+  - [✨ Solução Implementada](#-solução-implementada)
+  - [🏢 Casos de Uso Reais](#-casos-de-uso-reais)
+  - [🆚 Comparação com Outras Soluções](#-comparação-com-outras-soluções)
+- [🚀 Características Principais](#-características-principais)
+- [🛠️ Stack Tecnológica](#️-stack-tecnológica)
+- [📋 Pré-requisitos](#-pré-requisitos)
+  - [Sistema Operacional](#sistema-operacional)
+  - [Software Necessário](#software-necessário)
+  - [Verificação do Sistema](#verificação-do-sistema)
+  - [Portas Necessárias](#portas-necessárias)
+- [⚡ Instalação e Uso Rápido](#-instalação-e-uso-rápido)
+  - [🔍 Detecção Automática de Ambiente](#-como-funciona-a-detecção-automática-de-ambiente)
+- [� Criando uma Aplicação Laravel](#-criando-uma-aplicação-laravel)
+- [�📋 Comandos Disponíveis](#-comandos-disponíveis)
+  - [Gerenciamento do Sistema](#gerenciamento-do-sistema)
+  - [Gerenciamento de Aplicações](#gerenciamento-de-aplicações)
+  - [Exemplos Práticos](#exemplos-práticos)
+- [🏗️ Estrutura do Projeto](#️-estrutura-do-projeto)
+- [🌍 Ambientes](#-ambientes)
+  - [Detecção Automática](#detecção-automática)
+  - [Desenvolvimento](#desenvolvimento)
+  - [Produção](#produção)
+  - [🔄 Autostart em Produção](#-autostart-em-produção)
+- [⚙️ Configuração](#️-configuração)
+  - [Variáveis de Ambiente (.env)](#variáveis-de-ambiente-env)
+  - [🔄 Aplicando Alterações no .env](#-aplicando-alterações-no-env)
+  - [Principais Configurações](#principais-configurações)
+- [📊 Monitoramento e Logs](#-monitoramento-e-logs)
+- [🔒 SSL e Segurança](#-ssl-e-segurança)
+  - [Comportamento de Domínios](#comportamento-de-domínios)
+  - [Configuração SSL Automática](#configuração-ssl-automática)
+  - [Certificados Let's Encrypt](#certificados-lets-encrypt)
+- [🎯 Exemplos Práticos](#-exemplos-práticos)
+- [📈 Performance](#-performance)
+- [🤝 Contribuição](#-contribuição)
+- [📝 Changelog](#-changelog)
+- [🆘 Suporte](#-suporte)
+- [📄 Licença](#-licença)
+- [🙏 Agradecimentos](#-agradecimentos)
+
+---
+
+## 💡 Motivação e Contexto
+
+Este projeto nasceu da necessidade de **deploy rápido e eficiente de aplicações PHP** em instâncias EC2 de prototipação. O cenário típico envolvia:
+
+### 🎯 **Problema Original**
+- **Deploy demorado**: Configurar ambiente PHP, MySQL, Nginx para cada nova aplicação
+- **Conflitos de versão**: Aplicações legadas em PHP 5.6 convivendo com novas em PHP 8.4
+- **Configuração repetitiva**: Nginx virtual hosts, certificados SSL, bancos de dados
+- **Ambiente inconsistente**: Diferenças entre desenvolvimento local e produção
+
+### ✨ **Solução Implementada**
+- **Deploy em 30 segundos**: Um comando cria aplicação completa com domínio configurado
+- **Múltiplas versões simultâneas**: PHP 5.6, 7.4 e 8.4 rodando em paralelo
+- **Zero configuração manual**: SSL, virtual hosts e bancos criados automaticamente
+- **Ambientes idênticos**: Mesmo comportamento em desenvolvimento e produção
+
+### 🏢 **Casos de Uso Reais**
+- **🔄 Migração gradual**: Manter sistema legado (PHP 5.6) enquanto desenvolve novo (PHP 8.4)
+- **👨‍💻 Prototipação rápida**: Clientes precisam ver demo funcionando em minutos
+- **🧪 Testes de compatibilidade**: Testar mesma aplicação em diferentes versões PHP
+- **📊 Ambiente multi-cliente**: Cada cliente com sua aplicação isolada e versão PHP ideal
+
+### 🆚 **Comparação com Outras Soluções**
+
+| Solução | ⏱️ Setup | 🐘 Multi-PHP | 🔄 Deploy | 🛠️ Manutenção | 🎯 Cenário Ideal |
+|---------|----------|-------------|-----------|---------------|------------------|
+| **Docker PHP Multiversion** | 30 segundos | ✅ Nativo | Um comando | Zero | **Prototipação EC2** |
+| XAMPP/WAMP | 10 minutos | ❌ Uma versão | Manual | Alta | Desenvolvimento local |
+| Vagrant + VirtualBox | 20 minutos | ✅ Configurável | Lento | Média | Desenvolvimento isolado |
+| Docker Compose Manual | 60+ minutos | ❌ Por projeto | Manual | Alta | Projetos únicos |
+| Kubernetes + Helm | 4+ horas | ✅ Complexo | Automático | Muito alta | Produção enterprise |
+| Laravel Sail | 5 minutos | ❌ Uma versão | Específico | Baixa | Projetos Laravel |
+| Devilbox | 15 minutos | ✅ Limitado | Manual | Média | Desenvolvimento local |
+
+**🎯 Por que esta solução é superior para EC2 de prototipação:**
+
+- **⚡ Velocidade**: Deploy em 30s vs 60+ minutos de configuração manual
+- **🔧 Zero dependência**: Não precisa de Vagrant, VirtualBox ou Kubernetes
+- **💰 Custo-efetivo**: Uma instância EC2 roda múltiplas aplicações PHP
+- **🎨 Cliente-ready**: URLs diretas com SSL automático para demonstrações
+- **🔄 Migração amigável**: Mantém sistemas legacy enquanto desenvolve novos
+- **📦 Produção-ready**: Mesmo ambiente em dev/staging/produção
+
 ## 🚀 Características Principais
 
 - **🐘 Múltiplas versões PHP**: Suporte simultâneo a PHP 5.6, 7.4 e 8.4
@@ -18,18 +107,103 @@ Sistema Docker completo para desenvolvimento e produção com suporte simultâne
 - **🎯 Framework agnóstico**: Suporte a Laravel, CakePHP e qualquer framework PHP
 - **📦 Stack completa**: Nginx, MySQL (5.7/8.0), Redis e PHPMyAdmin inclusos
 - **🔒 SSL automático**: Configuração Let's Encrypt integrada
-- **📊 Monitoramento**: Scripts de status e logs em tempo real
+- **�️ Segurança por design**: Domínios não configurados retornam 404 automaticamente
+- **�📊 Monitoramento**: Scripts de status e logs em tempo real
 - **🛠️ Zero configuração**: Funciona out-of-the-box
 
 ## 🛠️ Stack Tecnológica
 
 | Componente | Versão | Portas | Descrição |
 |------------|--------|--------|-----------|
-| **Nginx** | Alpine | 80, 443 | Proxy reverso e servidor web |
+| **Nginx** | Alpine | 80, 443 | Proxy reverso e servidor web com configuração padrão que retorna 404 para domínios não mapeados |
 | **PHP-FPM** | 5.6, 7.4, 8.4 | 9000 | Processamento PHP simultâneo |
 | **MySQL** | 5.7, 8.0 | 3306, 3307 | Bancos de dados |
 | **Redis** | 7-Alpine | 6379 | Cache e sessões |
 | **PHPMyAdmin** | Latest | 8080 | Administração MySQL |
+
+## 📋 Pré-requisitos
+
+### Sistema Operacional
+- **Linux** (Ubuntu 20.04+, Debian 11+, CentOS 8+, RHEL 8+)
+- **Arquitetura**: x86_64 (AMD64)
+
+### Software Necessário
+
+#### 1. Docker Engine (20.10+)
+```bash
+# Ubuntu/Debian
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+newgrp docker
+
+# CentOS/RHEL
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install -y docker-ce docker-ce-cli containerd.io
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+```
+
+#### 2. Docker Compose (2.0+)
+```bash
+# Já incluído no Docker Engine moderno
+# Verificar instalação (use 'docker compose' - comando integrado)
+docker compose version
+```
+**📝 Nota:** Use `docker compose` (com espaço) em vez de `docker-compose` (hífen). O comando integrado é a versão moderna.
+
+#### 3. Git (apenas para instalação)
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install -y git
+
+# CentOS/RHEL
+sudo yum install -y git
+```
+**📝 Nota:** Git é necessário apenas para clonar o repositório. Depois da instalação não é mais usado pelo sistema.
+
+### Verificação do Sistema
+```bash
+# Verificar se todos os pré-requisitos estão instalados
+docker --version          # Docker 20.10+
+docker compose version    # Docker Compose 2.0+
+
+# Git (apenas para instalação inicial)
+git --version             # Git 2.25+
+
+# Testar Docker sem sudo
+docker run hello-world
+```
+
+### Portas Necessárias
+O sistema precisa que estas portas estejam **livres** (não sendo usadas por outros serviços):
+
+- **80** (HTTP) - Servidor web Nginx
+- **443** (HTTPS) - Servidor web Nginx com SSL
+- **3306** (MySQL 8.0) - Banco de dados principal
+- **3307** (MySQL 5.7) - Banco de dados legado
+- **6379** (Redis) - Cache e sessões
+- **8080** (PHPMyAdmin) - Interface de administração MySQL
+
+```bash
+# Verificar se alguma porta está em uso (deve retornar vazio se livres)
+sudo netstat -tulpn | grep -E ':(80|443|3306|3307|6379|8080)\s'
+
+# Se alguma porta estiver em uso, você verá algo como:
+# tcp 0.0.0.0:80 0.0.0.0:* LISTEN 1234/apache2
+```
+
+**🔧 Se houver conflitos de portas:**
+```bash
+# Pare o serviço conflitante (exemplo com Apache na porta 80)
+sudo systemctl stop apache2
+sudo systemctl disable apache2
+
+# OU altere as portas no arquivo .env antes de iniciar
+nano .env  # Modificar HTTP_PORT=8081, etc.
+```
 
 ## ⚡ Instalação e Uso Rápido
 
@@ -44,6 +218,28 @@ cd docker-php-multiversion
 ./scripts/start.sh
 ```
 
+**🔧 Produção:** O sistema detecta automaticamente o ambiente e cria a estrutura em `/sistemas/`  
+**🚀 Autostart:** Use `./scripts/start.sh --autostart` para configurar inicialização automática no boot  
+**⚙️ Configuração:** Se não existir `.env`, será criado automaticamente a partir de `.env.example`
+
+### 🔍 Como funciona a detecção automática de ambiente:
+
+O sistema verifica dois arquivos para determinar o ambiente:
+
+```bash
+# DESENVOLVIMENTO é detectado quando:
+# ✅ Existe o arquivo docker-compose.dev.yml
+# ✅ Existe o diretório apps/
+
+# PRODUÇÃO é detectado quando:
+# ❌ NÃO existe docker-compose.dev.yml OU
+# ❌ NÃO existe o diretório apps/
+```
+
+**📁 Estruturas por ambiente:**
+- **Desenvolvimento**: Usa `./apps/`, `./mysql/data/`, `./redis/data/` (bind mounts)
+- **Produção**: Cria `/sistemas/apps/`, `/sistemas/mysql/`, `/sistemas/redis/` (named volumes)
+
 ### 3. Crie sua primeira aplicação
 ```bash
 # Sintaxe: ./scripts/app-create.sh <php-version> <app-name> <domain>
@@ -57,6 +253,202 @@ echo "127.0.0.1 meuapp.local" | sudo tee -a /etc/hosts
 
 # Acesse no navegador
 curl -H "Host: meuapp.local" http://localhost
+```
+
+## 🚀 Criando uma Aplicação Laravel
+
+Este guia mostra como criar uma aplicação Laravel completa após usar o `app-create.sh`:
+
+### 1. Criar estrutura básica da aplicação
+```bash
+# Criar aplicação com PHP 8.4 (recomendado para Laravel)
+./scripts/app-create.sh php84 meuapp-laravel meuapp.local
+
+# Configurar /etc/hosts
+echo "127.0.0.1 meuapp.local" | sudo tee -a /etc/hosts
+```
+
+### 2. Instalar Laravel no container
+```bash
+# ========================================
+# OPÇÃO A: Instalação LOCAL (se tiver Composer/Laravel instalados localmente)
+# ========================================
+
+# Instalar Laravel localmente no diretório da aplicação
+cd apps/php84/meuapp-laravel
+rm public/index.php  # Remove o arquivo placeholder
+
+# Com Laravel Installer local
+laravel new . --force
+
+# OU com Composer local
+composer create-project laravel/laravel . --prefer-dist
+
+# ========================================
+# OPÇÃO B: Instalação NO CONTAINER (recomendado se não tiver ferramentas locais)
+# ========================================
+
+# Opção B1: Usando Laravel Installer no container
+docker compose exec app-php84 bash
+cd /var/www/html/meuapp-laravel/public/
+rm index.php  # Remove o arquivo placeholder
+cd ..
+composer global require laravel/installer
+laravel new . --force
+
+# Opção B2: Usando Composer Create-Project no container
+docker compose exec app-php84 bash
+cd /var/www/html/meuapp-laravel/
+rm -rf public/index.php  # Remove placeholder
+composer create-project laravel/laravel . --prefer-dist
+```
+
+**💡 Qual opção escolher?**
+- **Opção A (Local)**: Se você já tem Composer e/ou Laravel Installer instalados na sua máquina
+- **Opção B (Container)**: Se você não tem as ferramentas instaladas localmente ou prefere manter tudo isolado no Docker
+
+### 3. Configurar permissões
+```bash
+# ⚠️ APENAS NECESSÁRIO SE USOU INSTALAÇÃO NO CONTAINER (Opção B)
+# Se instalou localmente (Opção A), pule este passo
+
+# Entrar no container e ajustar permissões
+docker compose exec app-php84 bash
+chown -R www-data:www-data /var/www/html/meuapp-laravel/
+chmod -R 755 /var/www/html/meuapp-laravel/
+chmod -R 775 /var/www/html/meuapp-laravel/storage
+chmod -R 775 /var/www/html/meuapp-laravel/bootstrap/cache
+exit
+```
+
+**💡 Por que as permissões?**
+- **Instalação local**: Arquivos já têm permissões corretas
+- **Instalação no container**: Root cria arquivos, precisa ajustar para www-data
+
+### 4. Configurar banco de dados
+```bash
+# Editar .env do Laravel
+docker compose exec app-php84 nano /var/www/html/meuapp-laravel/.env
+```
+
+**Configurações do .env do Laravel:**
+```bash
+# Banco de dados MySQL 8.0 (recomendado)
+DB_CONNECTION=mysql
+DB_HOST=mysql8
+DB_PORT=3306
+DB_DATABASE=meuapp_laravel
+DB_USERNAME=app_user
+DB_PASSWORD=apppass123
+
+# OU Banco MySQL 5.7 (para compatibilidade)
+DB_CONNECTION=mysql
+DB_HOST=mysql57
+DB_PORT=3306
+DB_DATABASE=meuapp_laravel
+DB_USERNAME=app_user
+DB_PASSWORD=apppass123
+
+# Cache e Sessões com Redis
+CACHE_DRIVER=redis
+SESSION_DRIVER=redis
+REDIS_HOST=redis
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+```
+
+### 5. Criar banco de dados
+```bash
+# Conectar no MySQL e criar database
+docker compose exec mysql8 mysql -u app_user -p
+# Senha: apppass123
+
+# Dentro do MySQL:
+CREATE DATABASE meuapp_laravel CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+SHOW DATABASES;
+EXIT;
+```
+
+### 6. Executar migrações
+```bash
+# Rodar migrações do Laravel
+docker compose exec app-php84 bash
+cd /var/www/html/meuapp-laravel/
+php artisan migrate
+exit
+```
+
+### 7. Configurar URL da aplicação
+```bash
+# Definir APP_URL no .env do Laravel
+docker compose exec app-php84 bash
+cd /var/www/html/meuapp-laravel/
+php artisan config:cache
+php artisan route:cache
+exit
+```
+
+### 8. Testar a aplicação
+```bash
+# Acessar no navegador
+curl -H "Host: meuapp.local" http://localhost
+
+# Ou abrir no navegador: http://meuapp.local
+```
+
+### 🔧 Comandos úteis para Laravel
+
+```bash
+# Acessar container PHP para comandos Artisan
+docker compose exec app-php84 bash
+cd /var/www/html/meuapp-laravel/
+
+# Comandos Laravel comuns
+php artisan migrate               # Executar migrações
+php artisan make:controller       # Criar controller
+php artisan make:model           # Criar model
+php artisan tinker               # Console interativo
+php artisan serve               # NÃO usar (Nginx já serve)
+php artisan config:clear        # Limpar cache de config
+php artisan route:list          # Listar rotas
+
+# Instalar dependências
+composer install                 # Instalar dependências PHP
+npm install && npm run dev       # Assets (se usar Node.js)
+```
+
+### 🗃️ Conectar no banco via PHPMyAdmin
+```bash
+# Acessar PHPMyAdmin
+# URL: http://localhost:8080
+# Servidor: mysql8 (ou mysql57)
+# Usuário: app_user
+# Senha: apppass123
+# Database: meuapp_laravel
+```
+
+### ⚠️ Troubleshooting Laravel
+
+**Problema: Erro de permissão**
+```bash
+docker compose exec app-php84 chown -R www-data:www-data /var/www/html/meuapp-laravel/
+docker compose exec app-php84 chmod -R 775 /var/www/html/meuapp-laravel/storage
+```
+
+**Problema: APP_KEY não definida**
+```bash
+docker compose exec app-php84 bash
+cd /var/www/html/meuapp-laravel/
+php artisan key:generate
+```
+
+**Problema: Cache de configuração**
+```bash
+docker compose exec app-php84 bash
+cd /var/www/html/meuapp-laravel/
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
 ```
 
 ## 📋 Comandos Disponíveis
@@ -115,11 +507,29 @@ docker-php-multiversion/
 │   ├── php74/                  # Apps PHP 7.4
 │   └── php84/                  # Apps PHP 8.4
 ├── 📁 docker/                  # Dockerfiles personalizados
-│   ├── php56/ php74/ php84/    # Configurações por versão
+│   ├── php56/                  # Configurações PHP 5.6
+│   ├── php74/                  # Configurações PHP 7.4
+│   ├── php81/                  # Configurações PHP 8.1 (futuro)
+│   └── php84/                  # Configurações PHP 8.4
+├── 📁 logs/                    # Logs dos serviços
+│   ├── mysql/                  # Logs MySQL
+│   ├── nginx/                  # Logs Nginx
+│   ├── php56/                  # Logs PHP 5.6
+│   ├── php74/                  # Logs PHP 7.4
+│   └── php84/                  # Logs PHP 8.4
+├── 📁 mysql/                   # Configurações MySQL
+│   ├── data/                   # Dados dos bancos (desenvolvimento)
+│   │   ├── mysql57/            # Dados MySQL 5.7
+│   │   └── mysql8/             # Dados MySQL 8.0
+│   └── init/                   # Scripts de inicialização
+│       └── 01-init.sql         # Configuração inicial MySQL 8.0
 ├── 📁 nginx/                   # Configurações Nginx
 │   ├── conf.d/                 # Configurações de sites
-│   ├── templates/              # Templates automáticos
-│   └── ssl/                    # Certificados SSL
+│   ├── ssl/                    # Certificados SSL
+│   └── templates/              # Templates automáticos
+├── 📁 prompts/                 # Documentação do desenvolvimento
+├── 📁 redis/                   # Configurações Redis
+│   └── data/                   # Dados Redis (desenvolvimento)
 ├── 📁 scripts/                 # Scripts de automação
 │   ├── start.sh               # 🚀 Iniciar sistema
 │   ├── stop.sh                # 🛑 Parar sistema
@@ -128,24 +538,121 @@ docker-php-multiversion/
 │   ├── app-remove.sh          # ➖ Remover aplicação
 │   ├── monitor.sh             # 📊 Monitoramento
 │   └── test-system.sh         # 🧪 Testes do sistema
+├── .env.example               # 🔧 Configurações de exemplo
+├── .gitignore                 # 🚫 Arquivos ignorados
 ├── docker-compose.yml         # 🐳 Configuração principal
 ├── docker-compose.dev.yml     # 🔧 Overrides desenvolvimento
-└── 📄 README.md
+├── LICENSE                    # ⚖️ Licença MIT
+└── 📄 README.md               # 📖 Documentação
 ```
 
 ## 🌍 Ambientes
 
+### Detecção Automática
+O sistema analisa dois fatores para determinar o ambiente:
+
+```bash
+# Script de detecção (simplificado):
+if [ -f "docker-compose.dev.yml" ] && [ -d "apps" ]; then
+    AMBIENTE="desenvolvimento" 
+else
+    AMBIENTE="producao"
+fi
+```
+
 ### Desenvolvimento
-- **Detecção**: Presença do arquivo `docker-compose.dev.yml`
+- **Critério de detecção**: Existe `docker-compose.dev.yml` **E** existe diretório `apps/`
 - **Volumes**: Bind mounts para edição ao vivo
-- **Diretório**: `./apps/`
-- **Benefícios**: Hot reload, debug facilitado
+- **Diretório apps**: `./apps/` (local)
+- **Dados MySQL**: `./mysql/data/` (local)
+- **Dados Redis**: `./redis/data/` (local)
+- **Benefícios**: Hot reload, debug facilitado, edição direta
 
 ### Produção
-- **Detecção**: Ausência do arquivo `docker-compose.dev.yml`
+- **Critério de detecção**: **NÃO** existe `docker-compose.dev.yml` **OU** **NÃO** existe diretório `apps/`
 - **Volumes**: Named volumes para performance
-- **Diretório**: `/sistemas/apps/`
-- **Benefícios**: Performance otimizada, isolamento
+- **Diretório apps**: `/sistemas/apps/` (sistema)
+- **Dados MySQL**: `/sistemas/mysql/` (sistema)
+- **Dados Redis**: `/sistemas/redis/` (sistema)
+- **Autostart**: Docker configurado para iniciar automaticamente no boot
+- **Benefícios**: Performance otimizada, isolamento, alta disponibilidade
+
+### 🔄 Autostart em Produção
+Para configurar o sistema para iniciar automaticamente no boot:
+```bash
+# Configurar autostart do Docker e containers
+./scripts/start.sh --autostart
+
+# Opções do start.sh:
+./scripts/start.sh              # Configurar estrutura e iniciar containers
+./scripts/start.sh --setup      # Apenas configurar estrutura 
+./scripts/start.sh --autostart  # Configurar auto-start do sistema (systemd)
+```
+
+**O que o `--autostart` configura:**
+- Docker service habilitado (`systemctl enable docker`)
+- Containers com restart policy "unless-stopped"
+- Estrutura de diretórios em `/sistemas/` (produção)
+
+## ⚙️ Configuração
+
+### Variáveis de Ambiente (.env)
+O projeto usa um arquivo `.env` para configurações flexíveis:
+
+```bash
+# O arquivo .env é criado automaticamente na primeira execução
+./scripts/start.sh  # Copia .env.example para .env se não existir
+
+# Para personalizar, edite o arquivo .env
+nano .env
+```
+
+### 🔄 Aplicando Alterações no .env
+Após alterar o arquivo `.env`, é necessário reiniciar os containers para aplicar as mudanças:
+
+```bash
+# Método 1: Parar e iniciar (recomendado)
+./scripts/stop.sh
+./scripts/start.sh
+
+# Método 2: Reiniciar containers específicos
+docker compose restart
+
+# Método 3: Recriar containers (para mudanças estruturais)
+docker compose down
+docker compose up -d
+```
+
+**⚠️ Importante:**
+- **Portas**: Mudanças de portas requerem reinicialização completa
+- **Credenciais MySQL**: Mudanças só se aplicam a novos bancos/usuários
+- **Performance**: Configurações de memória requerem restart dos containers MySQL
+
+### Principais Configurações
+```bash
+# Bancos de Dados (credenciais para MySQL 8.0)
+MYSQL8_ROOT_PASSWORD=rootpass123
+MYSQL8_USER=app_user
+MYSQL8_PASSWORD=apppass123
+
+# Bancos de Dados (credenciais para MySQL 5.7)
+MYSQL57_ROOT_PASSWORD=rootpass123
+MYSQL57_USER=app_user
+MYSQL57_PASSWORD=apppass123
+
+# Portas (altere se houver conflitos)
+HTTP_PORT=80
+HTTPS_PORT=443
+MYSQL8_PORT=3306
+MYSQL57_PORT=3307
+REDIS_PORT=6379
+PHPMYADMIN_PORT=8080
+
+# Performance
+MYSQL_INNODB_BUFFER_POOL_SIZE=134217728  # 128MB
+```
+
+**⚠️ Lembre-se:** Após alterar qualquer configuração no `.env`, execute `./scripts/stop.sh` e `./scripts/start.sh` para aplicar as mudanças.
 
 ## 📊 Monitoramento e Logs
 
@@ -159,11 +666,19 @@ docker compose logs -f
 # Logs específicos de um container
 docker compose logs -f app-php84
 
+# Verificar tentativas de acesso a domínios não configurados
+docker compose logs nginx | grep "undefined_domains"
+
 # Monitoramento interativo
 ./scripts/monitor.sh
 ```
 
 ## 🔒 SSL e Segurança
+
+### Comportamento de Domínios
+- **Domínios configurados**: Retornam conteúdo das aplicações (Status 200)
+- **Domínios não configurados**: Retornam 404 automaticamente
+- **Proteção**: Evita vazamento de conteúdo entre aplicações
 
 ### Configuração SSL Automática
 ```bash
@@ -179,33 +694,39 @@ docker compose logs -f app-php84
 - Suporte a múltiplos domínios
 - Redirecionamento HTTP → HTTPS automático
 
-## 🎯 Casos de Uso
+## 🎯 Exemplos Práticos
 
-### 1. **Migração Gradual PHP**
+### 1. **Migração Gradual de Sistema Legacy**
 ```bash
-# Manter sistema legado em PHP 5.6
-./scripts/app-create.sh php56 legacy-system old.company.com
+# Manter sistema antigo funcionando
+./scripts/app-create.sh php56 erp-legado erp.empresa.com
 
-# Nova funcionalidade em PHP 8.4
-./scripts/app-create.sh php84 new-feature app.company.com
+# Desenvolver nova versão em paralelo
+./scripts/app-create.sh php84 erp-novo beta.empresa.com
+
+# Ambos sistemas rodando simultaneamente para testes A/B
 ```
 
-### 2. **Ambiente de Desenvolvimento Multi-projeto**
+### 2. **Prototipação Rápida para Clientes**
 ```bash
-# Cada projeto em sua versão ideal
-./scripts/app-create.sh php74 projeto-cliente1 client1.local
-./scripts/app-create.sh php84 projeto-cliente2 client2.local
-./scripts/app-create.sh php56 projeto-legado legacy.local
+# Cliente A - E-commerce em Laravel
+./scripts/app-create.sh php84 loja-cliente-a loja-a.demo.com --ssl
+
+# Cliente B - Sistema legado CakePHP
+./scripts/app-create.sh php74 sistema-cliente-b app-b.demo.com --ssl
+
+# Cliente C - WordPress customizado
+./scripts/app-create.sh php81 site-cliente-c site-c.demo.com
 ```
 
-### 3. **Deploy em Produção**
+### 3. **Ambiente de Desenvolvimento Multi-Projeto**
 ```bash
-# Remover docker-compose.dev.yml para produção
-mv docker-compose.dev.yml docker-compose.dev.yml.backup
+# Cada desenvolvedor com seus projetos isolados
+./scripts/app-create.sh php84 projeto-novo dev.local
+./scripts/app-create.sh php74 manutencao-sistema legacy.local
+./scripts/app-create.sh php56 sistema-muito-antigo old.local
 
-# Sistema detecta automaticamente o ambiente
-./scripts/start.sh
-./scripts/app-create.sh php84 production app.domain.com --ssl
+# Todos rodando simultaneamente na mesma máquina
 ```
 
 ## 📈 Performance
