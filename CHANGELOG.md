@@ -5,6 +5,33 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.4.0] - 2025-08-07
+
+### Adicionado
+- 🏗️ Sistema completo de templates Nginx organizados
+- 📁 Separação clara entre templates HTTP e HTTPS
+- 🔧 Scripts de automação aprimorados:
+  - `add-app.sh`: Criação automática com detecção de template
+  - `remove-app.sh`: Remoção segura (preserva dados por padrão)
+  - `setup-ssl.sh`: Placeholder para configuração SSL futura
+- 📚 Documentação completa nos templates (`nginx/templates/README.md`)
+- 🛡️ Headers de segurança otimizados por versão PHP
+- 🎯 Workflow HTTP-first com SSL opcional
+
+### Melhorado
+- 📝 Nomenclatura padronizada dos templates:
+  - `php{56,74,84}-http-template.conf` (HTTP apenas)
+  - `php{56,74,84}-https-template.conf` (HTTPS com SSL)
+- 🔄 Comportamento padrão alterado para HTTP-only
+- 📦 Paths corrigidos para compatibilidade com volumes Docker
+- 🧹 .gitignore reorganizado sem duplicatas
+- ⚡ Performance otimizada por versão PHP (timeouts, buffers)
+
+### Corrigido
+- 🐛 Mapeamento correto de volumes Docker nos templates
+- 🔗 FastCGI pass para containers corretos
+- 🗂️ Estrutura de diretórios consistente
+
 ## [1.3.0] - 2025-08-07
 
 ### Adicionado
