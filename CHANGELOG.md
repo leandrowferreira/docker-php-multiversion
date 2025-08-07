@@ -5,6 +5,54 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.3.0] - 2025-08-07
+
+### Adicionado
+- **Ambiente de testes local completo** com múltiplas versões PHP/MySQL
+- **Hosts de desenvolvimento**:
+  - `teste1.docker.local` - PHP 5.6 + MySQL 5.7 
+  - `teste2.docker.local` - PHP 7.4 + MySQL 8.0
+- **Configuração Nginx para testes locais** (`nginx/conf.d/testes-locais.conf`)
+- **Container PHP 5.6 refatorado** com Ubuntu 22.04 + PPA Ondrej
+- **Configuração TCP automática** para PHP-FPM 5.6 (porta 9000)
+- **Arquivos de exemplo funcionais** (`examples/Dockerfile 5.6`)
+- **Pool FPM configurado** (`docker/php56/fmp-pool.conf`)
+
+### Corrigido
+- **Container PHP 5.6**: Migração de Debian Stretch EOL para Ubuntu 22.04
+- **PHP-FPM 5.6**: Configuração automática de socket Unix para TCP
+- **Dependências Docker Compose**: `app-php81` → `app-php84` corrigida
+- **Repositórios PHP 5.6**: PPA Ondrej estável em Ubuntu 22.04
+- **Conectividade**: PHP 5.6 ↔ MySQL 5.7 validada e funcional
+
+### Melhorado
+- **Estabilidade do PHP 5.6**: Base Ubuntu sólida em vez de Debian EOL
+- **Scripts de automação**: Permissões de execução corrigidas
+- **Documentação técnica**: Exemplos de configuração funcional
+- **Ambiente de desenvolvimento**: Setup local padronizado e reproduzível
+- **Conectividade entre containers**: Validação completa de todos os serviços
+
+### Testado e Validado
+- ✅ **PHP 5.6** com MySQL 5.7 - Conectividade completa
+- ✅ **PHP 7.4** com MySQL 8.0 - Funcionamento perfeito  
+- ✅ **PHP 8.4** mantido da v1.2.0 - Estável
+- ✅ **PHPMyAdmin** - Acesso aos dois bancos MySQL
+- ✅ **Hosts locais** - Resolução DNS e configuração Nginx
+- ✅ **Logs organizados** - Por versão PHP e serviço
+
+### Ambiente de Desenvolvimento
+Esta versão estabelece um **ambiente de desenvolvimento local robusto** que permite:
+- Testar migrações PHP antes do deploy em produção
+- Validar compatibilidade entre diferentes versões PHP/MySQL
+- Desenvolvimento simultâneo com múltiplas versões
+- Replicação fácil do ambiente pela equipe
+
+### Arquivos Técnicos
+- `docker/php56/Dockerfile` - Refatoração completa Ubuntu + Ondrej
+- `docker/php56/entrypoint.sh` - Configuração automática TCP FPM
+- `nginx/conf.d/testes-locais.conf` - Hosts de desenvolvimento
+- `examples/Dockerfile 5.6` - Referência técnica funcional
+
 ## [1.2.0] - 2025-08-07
 
 ### Adicionado
@@ -117,11 +165,12 @@ Para migrar aplicações existentes:
 - ✅ Monitoramento e logs
 
 ### Histórico de Versões
+- **v1.3.0**: Ambiente de testes local + PHP 5.6 refatorado
 - **v1.2.0**: Migração para PHP 8.4 + Sistema de documentação
 - **v1.1.0**: Let's Encrypt automático + Melhorias de routing
 - **v1.0.0**: Sistema completo inicial
 
 ### Próximas Versões Planejadas
-- **v1.3.0**: Dashboard de monitoramento web
-- **v1.4.0**: Suporte a PostgreSQL
+- **v1.4.0**: Dashboard de monitoramento web
+- **v1.5.0**: Suporte a PostgreSQL
 - **v2.0.0**: Kubernetes migration path
