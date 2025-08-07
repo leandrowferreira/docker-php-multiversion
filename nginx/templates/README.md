@@ -26,7 +26,7 @@ Os arquivos neste diretório servem como **templates base** e **NÃO são carreg
 
 ### Variáveis de Substituição
 
-Cada template contém variáveis que são automaticamente substituídas pelo script `add-app.sh`:
+Cada template contém variáveis que são automaticamente substituídas pelo script `app-create.sh`:
 
 - `{{APP_NAME}}` - Nome da aplicação
 - `{{DOMAIN}}` - Domínio principal
@@ -36,7 +36,7 @@ Cada template contém variáveis que são automaticamente substituídas pelo scr
 
 ```bash
 # O script usa automaticamente o template correto
-./scripts/add-app.sh minha-loja php84 loja.exemplo.com
+./scripts/app-create.sh php84 minha-loja loja.exemplo.com
 ```
 
 Isso criará um arquivo `nginx/conf.d/app-minha-loja.conf` baseado no template `php84-template.conf`.
@@ -73,6 +73,6 @@ Todos os templates incluem:
 ## ⚠️ Importante
 
 - **NUNCA edite diretamente os arquivos em `conf.d/`**
-- Use sempre o script `add-app.sh` para criar novas aplicações
+- Use sempre o script `app-create.sh` para criar novas aplicações
 - Modifique os templates se precisar de mudanças globais
 - O Nginx **NÃO carrega** os arquivos desta pasta

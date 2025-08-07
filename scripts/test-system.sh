@@ -37,7 +37,9 @@ fi
 # Teste 2: Verificar se Docker Compose está disponível
 echo "🔍 Verificando Docker Compose..."
 if command -v docker-compose >/dev/null 2>&1; then
-    success "Docker Compose disponível"
+    success "Docker Compose v1 disponível"
+elif docker compose version >/dev/null 2>&1; then
+    success "Docker Compose v2 disponível"
 else
     error "Docker Compose não encontrado"
     exit 1
@@ -51,8 +53,7 @@ required_files=(
     "docker/php74/Dockerfile" 
     "docker/php56/Dockerfile"
     "nginx/nginx.conf"
-    "nginx/conf.d/app-php84.conf"
-    ".env.example"
+    "nginx/templates/php84-http-template.conf"
 )
 
 for file in "${required_files[@]}"; do
@@ -66,12 +67,12 @@ done
 # Teste 4: Verificar scripts
 echo "🔍 Verificando scripts..."
 scripts=(
-    "scripts/setup-directories.sh"
-    "scripts/add-app.sh"
-    "scripts/generate-ssl.sh"
-    "scripts/backup-db.sh"
+    "scripts/app-create.sh"
+    "scripts/app-list.sh"
+    "scripts/app-remove.sh"
     "scripts/monitor.sh"
-    "scripts/setup-autostart.sh"
+    "scripts/start.sh"
+    "scripts/stop.sh"
 )
 
 for script in "${scripts[@]}"; do
@@ -88,14 +89,25 @@ done
 
 # Teste 5: Verificar se containers estão rodando (se sistema já foi iniciado)
 echo "🔍 Verificando containers..."
-if docker-compose ps >/dev/null 2>&1; then
+
+# Determinar comando do Docker Compose
+if command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_CMD="docker-compose"
+elif docker compose version >/dev/null 2>&1; then
+    COMPOSE_CMD="docker compose"
+else
+    warning "Docker Compose não disponível, pulando verificação"
+    COMPOSE_CMD=""
+fi
+
+if [ -n "$COMPOSE_CMD" ] && $COMPOSE_CMD ps >/dev/null 2>&1; then
     containers=(
         "nginx-proxy"
         "mysql8"
         "mysql57"
-        "laravel-php84"
-        "laravel-php74"
-        "laravel-php56"
+        "app-php84"
+        "app-php74"
+        "app-php56"
         "redis-cache"
     )
     
@@ -110,26 +122,53 @@ else
     warning "Sistema ainda não foi iniciado (normal se for primeira execução)"
 fi
 
-# Teste 6: Verificar diretórios de produção (se existirem)
-echo "🔍 Verificando diretórios de produção..."
-if [ -d "/sistemas" ]; then
-    production_dirs=(
-        "/sistemas/apps"
-        "/sistemas/mysql8"
-        "/sistemas/mysql57"
-        "/sistemas/redis"
-        "/sistemas/backups"
+# Teste 6: Verificar diretórios baseado no ambiente
+echo "🔍 Verificando diretórios..."
+
+# Detectar ambiente
+if [ -f "docker-compose.dev.yml" ] && [ -d "apps" ]; then
+    # Ambiente de desenvolvimento
+    success "Ambiente: DESENVOLVIMENTO"
+    
+    dev_dirs=(
+        "apps"
+        "mysql/data"
+        "redis/data"
+        "logs"
+        "nginx/conf.d"
+        "nginx/templates"
     )
     
-    for dir in "${production_dirs[@]}"; do
+    for dir in "${dev_dirs[@]}"; do
         if [ -d "$dir" ]; then
             success "Diretório $dir existe"
         else
-            warning "Diretório $dir não existe (execute setup-directories.sh)"
+            warning "Diretório $dir não existe (execute './scripts/start.sh --setup')"
         fi
     done
+    
 else
-    warning "Diretório /sistemas não existe (execute setup-directories.sh)"
+    # Ambiente de produção
+    success "Ambiente: PRODUÇÃO"
+    
+    if [ -d "/sistemas" ]; then
+        production_dirs=(
+            "/sistemas/apps"
+            "/sistemas/mysql8"
+            "/sistemas/mysql57"
+            "/sistemas/redis"
+        )
+        
+        for dir in "${production_dirs[@]}"; do
+            if [ -d "$dir" ]; then
+                success "Diretório $dir existe"
+            else
+                warning "Diretório $dir não existe (execute './scripts/start.sh --setup')"
+            fi
+        done
+    else
+        warning "Diretório /sistemas não existe (execute './scripts/start.sh --setup')"
+    fi
 fi
 
 # Teste 7: Verificar arquivo .env
@@ -184,7 +223,8 @@ echo ""
 echo "🏁 Teste concluído!"
 echo ""
 echo "📋 Próximos passos recomendados:"
-echo "   1. Se há warnings sobre diretórios: execute 'make setup'"
-echo "   2. Se há warnings sobre containers: execute 'make start'"
-echo "   3. Para monitoramento: execute 'make monitor'"
-echo "   4. Para adicionar aplicação: execute 'make add-app APP=nome PHP=php84 DOMAIN=exemplo.com'"
+echo "   1. Se há warnings sobre diretórios: execute './scripts/start.sh --setup'"
+echo "   2. Se há warnings sobre containers: execute './scripts/start.sh'"
+echo "   3. Para monitoramento: execute './scripts/monitor.sh'"
+echo "   4. Para adicionar aplicação: execute './scripts/app-create.sh <php> <nome> <dominio>'"
+echo "   5. Para listar aplicações: execute './scripts/app-list.sh'"

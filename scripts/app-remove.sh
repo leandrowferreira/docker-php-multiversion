@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Script para remover uma aplicação do sistema
-# Uso: ./remove-app.sh <nome-da-app> <versao-php> [--force] [--delete-data]
-# Exemplo: ./remove-app.sh teste3 php84 --force
+# Uso: ./app-remove.sh <versao-php> <nome-da-app> [--force] [--delete-data]
+# Exemplo: ./app-remove.sh php84 teste3 --force
 
 set -e
 
@@ -23,11 +23,11 @@ show_help() {
     echo "🗑️  Script para remover aplicação"
     echo "=================================="
     echo ""
-    echo "Uso: $0 <nome-da-app> <versao-php> [opções]"
+    echo "Uso: $0 <versao-php> <nome-da-app> [opções]"
     echo ""
     echo "Parâmetros:"
-    echo "  nome-da-app    Nome da aplicação a ser removida"
     echo "  versao-php     php84, php74 ou php56"
+    echo "  nome-da-app    Nome da aplicação a ser removida"
     echo ""
     echo "Opções:"
     echo "  --force        Não pedir confirmação"
@@ -37,16 +37,16 @@ show_help() {
     echo "⚠️  PADRÃO: Mantém os dados da aplicação (apenas remove config Nginx)"
     echo ""
     echo "Exemplos:"
-    echo "  $0 teste3 php84                     # Remove config, mantém dados"
-    echo "  $0 teste3 php84 --force             # Remove config sem confirmar"
-    echo "  $0 teste3 php84 --delete-data       # Remove TUDO (config + dados)"
-    echo "  $0 teste3 php84 --delete-data --force # Remove tudo sem confirmar"
+    echo "  $0 php84 teste3                     # Remove config, mantém dados"
+    echo "  $0 php84 teste3 --force             # Remove config sem confirmar"
+    echo "  $0 php84 teste3 --delete-data       # Remove TUDO (config + dados)"
+    echo "  $0 php84 teste3 --delete-data --force # Remove tudo sem confirmar"
     echo ""
 }
 
 # Variáveis padrão
-APP_NAME=""
 PHP_VERSION=""
+APP_NAME=""
 FORCE=false
 KEEP_DATA=true  # PADRÃO: Manter dados
 
@@ -76,10 +76,10 @@ while [[ $# -gt 0 ]]; do
             exit 1
             ;;
         *)
-            if [ -z "$APP_NAME" ]; then
-                APP_NAME="$1"
-            elif [ -z "$PHP_VERSION" ]; then
+            if [ -z "$PHP_VERSION" ]; then
                 PHP_VERSION="$1"
+            elif [ -z "$APP_NAME" ]; then
+                APP_NAME="$1"
             else
                 error "Muitos argumentos"
                 show_help
@@ -91,7 +91,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validar argumentos obrigatórios
-if [ -z "$APP_NAME" ] || [ -z "$PHP_VERSION" ]; then
+if [ -z "$PHP_VERSION" ] || [ -z "$APP_NAME" ]; then
     error "Argumentos obrigatórios não fornecidos"
     show_help
     exit 1
@@ -111,8 +111,8 @@ fi
 
 echo "🗑️  Removendo aplicação"
 echo "======================"
-info "Nome: $APP_NAME"
 info "PHP: $PHP_VERSION"
+info "Nome: $APP_NAME"
 info "Forçar: $FORCE"
 info "Manter dados: $([ "$KEEP_DATA" = true ] && echo "SIM (padrão)" || echo "NÃO (--delete-data)")"
 echo ""
@@ -235,7 +235,7 @@ else
     success "✅ Remoção segura realizada!"
     info "📁 Dados mantidos em: $APP_DIR"
     echo "   Para remover completamente os dados:"
-    echo "   ./scripts/remove-app.sh $APP_NAME $PHP_VERSION --delete-data"
+    echo "   ./scripts/app-remove.sh $PHP_VERSION $APP_NAME --delete-data"
 fi
 
 echo ""

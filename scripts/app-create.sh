@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Script para adicionar uma nova aplicação ao sistema
+# Script para criar uma nova aplicação no sistema
 # Suporta domínios principais e subdomínios
-# Uso: ./add-app.sh <nome-da-app> <versao-php> <dominio> [--www] [--subdomain]
-# Exemplo: ./add-app.sh minha-loja php84 loja.exemplo.com --www
+# Uso: ./app-create.sh <versao-php> <nome-da-app> <dominio> [--www] [--subdomain]
+# Exemplo: ./app-create.sh php84 minha-loja loja.exemplo.com --www
 
 set -e
 
 # Cores para output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
+RED='\033[0echo "🎉 Aplicação '$APP_NAME' criada com sucesso!"31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
@@ -21,14 +21,14 @@ info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
 
 # Função para mostrar ajuda
 show_help() {
-    echo "🚀 Script para adicionar nova aplicação"
-    echo "======================================"
+    echo "🚀 Script para criar nova aplicação"
+    echo "===================================="
     echo ""
-    echo "Uso: $0 <nome-da-app> <versao-php> <dominio> [opções]"
+    echo "Uso: $0 <versao-php> <nome-da-app> <dominio> [opções]"
     echo ""
     echo "Parâmetros:"
-    echo "  nome-da-app    Nome da aplicação (sem espaços)"
     echo "  versao-php     php84, php74 ou php56"
+    echo "  nome-da-app    Nome da aplicação (sem espaços)"
     echo "  dominio        Domínio principal da aplicação"
     echo ""
     echo "Opções:"
@@ -42,9 +42,9 @@ show_help() {
     echo "⚠️  PADRÃO: Cria apenas HTTP. Use --ssl após configurar certificados."
     echo ""
     echo "Exemplos:"
-    echo "  $0 loja php84 minhaloja.com --www           # HTTP com redirect www"
-    echo "  $0 blog php74 blog.exemplo.com --subdomain  # HTTP simples"
-    echo "  $0 app php84 app.com --ssl                   # HTTPS (certificados já configurados)"
+    echo "  $0 php84 loja minhaloja.com --www           # HTTP com redirect www"
+    echo "  $0 php74 blog blog.exemplo.com --subdomain  # HTTP simples"
+    echo "  $0 php84 app app.com --ssl                   # HTTPS (certificados já configurados)"
     echo ""
 }
 
@@ -90,10 +90,10 @@ while [[ $# -gt 0 ]]; do
             exit 1
             ;;
         *)
-            if [ -z "$APP_NAME" ]; then
-                APP_NAME="$1"
-            elif [ -z "$PHP_VERSION" ]; then
+            if [ -z "$PHP_VERSION" ]; then
                 PHP_VERSION="$1"
+            elif [ -z "$APP_NAME" ]; then
+                APP_NAME="$1"
             elif [ -z "$DOMAIN" ]; then
                 DOMAIN="$1"
             else
@@ -107,7 +107,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validar argumentos obrigatórios
-if [ -z "$APP_NAME" ] || [ -z "$PHP_VERSION" ] || [ -z "$DOMAIN" ]; then
+if [ -z "$PHP_VERSION" ] || [ -z "$APP_NAME" ] || [ -z "$DOMAIN" ]; then
     error "Argumentos obrigatórios não fornecidos"
     show_help
     exit 1
@@ -125,16 +125,88 @@ if [[ ! "$APP_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
     exit 1
 fi
 
-echo "🚀 Adicionando nova aplicação"
-echo "============================="
-info "Nome: $APP_NAME"
+echo "🚀 Criando nova aplicação"
+echo "========================="
 info "PHP: $PHP_VERSION"
+info "Nome: $APP_NAME"
 info "Domínio: $DOMAIN"
 info "Incluir www: $INCLUDE_WWW"
 info "Subdomínio: $IS_SUBDOMAIN"
 info "SSL: $([ "$NO_SSL" = true ] && echo "HTTP apenas (padrão)" || echo "HTTPS habilitado")"
 info "Laravel: $IS_LARAVEL"
 echo ""
+
+# Função para criar arquivos diretamente no container em produção
+create_files_in_production() {
+    local php_version="$1"
+    local app_name="$2"
+    local app_dir="$3"
+    
+    if [ "$ENV_TYPE" = "produção" ]; then
+        info "Criando estrutura Laravel diretamente no container..."
+        
+        local container_name="app-${php_version}"
+        local container_path="/var/www/html/${php_version}/${app_name}"
+        
+        # Verificar se container está rodando
+        if ! docker ps | grep -q "$container_name"; then
+            error "Container $container_name não está rodando. Execute: scripts/start.sh"
+            exit 1
+        fi
+        
+        # Criar estrutura de diretórios no container
+        docker exec "$container_name" mkdir -p "$container_path/public"
+        docker exec "$container_name" mkdir -p "$container_path/storage/logs"
+        docker exec "$container_name" mkdir -p "$container_path/storage/framework/cache"
+        docker exec "$container_name" mkdir -p "$container_path/storage/framework/sessions"
+        docker exec "$container_name" mkdir -p "$container_path/storage/framework/views"
+        
+        # Criar index.php básico
+        docker exec "$container_name" bash -c "cat > '$container_path/public/index.php' << 'EOF'
+<?php
+// Aplicação Web - Placeholder
+echo \"<h1>Aplicação em manutenção</h1>\";
+echo \"<p>Esta aplicação será configurada em breve.</p>\";
+echo \"<p>PHP Version: \" . phpversion() . \"</p>\";
+echo \"<p>Servidor: \" . \$_SERVER['SERVER_NAME'] . \"</p>\";
+EOF"
+        
+        # Criar .env exemplo
+        docker exec "$container_name" bash -c "cat > '$container_path/.env.example' << 'EOF'
+APP_NAME=\"Minha Aplicação\"
+APP_ENV=production
+APP_KEY=
+APP_DEBUG=false
+APP_URL=https://SEU_DOMINIO
+
+LOG_CHANNEL=stack
+LOG_LEVEL=error
+
+DB_CONNECTION=mysql
+DB_HOST=mysql8
+DB_PORT=3306
+DB_DATABASE=sua_database
+DB_USERNAME=sistemas_user
+DB_PASSWORD=sistemas_pass
+
+CACHE_DRIVER=redis
+SESSION_DRIVER=redis
+QUEUE_CONNECTION=redis
+
+REDIS_HOST=redis
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+EOF"
+        
+        # Ajustar permissões
+        docker exec "$container_name" chown -R www-data:www-data "$container_path"
+        
+        success "Estrutura criada diretamente no container"
+        return 0
+    fi
+    
+    return 1
+}
 
 # Detectar ambiente (desenvolvimento vs produção)
 if [ -f "docker-compose.dev.yml" ] && [ -d "apps" ]; then
@@ -153,7 +225,7 @@ info "Criando diretório: $APP_DIR"
 
 # Verificar se diretório base existe
 if [ "$ENV_TYPE" = "produção" ] && [ ! -d "/sistemas" ]; then
-    error "Diretório /sistemas não existe. Execute: scripts/init.sh"
+    error "Diretório /sistemas não existe. Execute: scripts/start.sh"
     exit 1
 elif [ "$ENV_TYPE" = "desenvolvimento" ] && [ ! -d "apps" ]; then
     error "Diretório ./apps não existe. Execute no diretório correto do projeto"
@@ -186,31 +258,36 @@ is_laravel_existing() {
     fi
 }
 
-# Criar estrutura Laravel básica se não existir
+# Criar estrutura Laravel básica
 if [ "$IS_LARAVEL" = true ]; then
-    if is_laravel_existing "$APP_DIR"; then
-        success "Estrutura Laravel já existe, mantendo arquivos existentes"
+    if [ "$ENV_TYPE" = "produção" ]; then
+        # Em produção, criar diretamente no container
+        create_files_in_production "$PHP_VERSION" "$APP_NAME" "$APP_DIR"
     else
-        info "Criando estrutura Laravel básica..."
-    
-    mkdir -p "$APP_DIR/public"
-    mkdir -p "$APP_DIR/storage/logs"
-    mkdir -p "$APP_DIR/storage/framework/cache"
-    mkdir -p "$APP_DIR/storage/framework/sessions"
-    mkdir -p "$APP_DIR/storage/framework/views"
-    
-    # Criar index.php básico
-    cat > "$APP_DIR/public/index.php" << 'EOF'
+        # Em desenvolvimento, verificar se já existe
+        if is_laravel_existing "$APP_DIR"; then
+            success "Estrutura Laravel já existe, mantendo arquivos existentes"
+        else
+            info "Criando estrutura Laravel básica..."
+        
+        mkdir -p "$APP_DIR/public"
+        mkdir -p "$APP_DIR/storage/logs"
+        mkdir -p "$APP_DIR/storage/framework/cache"
+        mkdir -p "$APP_DIR/storage/framework/sessions"
+        mkdir -p "$APP_DIR/storage/framework/views"
+        
+        # Criar index.php básico
+        cat > "$APP_DIR/public/index.php" << 'EOF'
 <?php
-// Aplicação Laravel - Placeholder
+// Aplicação Web - Placeholder
 echo "<h1>Aplicação em manutenção</h1>";
 echo "<p>Esta aplicação será configurada em breve.</p>";
 echo "<p>PHP Version: " . phpversion() . "</p>";
 echo "<p>Servidor: " . $_SERVER['SERVER_NAME'] . "</p>";
 EOF
 
-    # Criar .env exemplo
-    cat > "$APP_DIR/.env.example" << 'EOF'
+        # Criar .env exemplo
+        cat > "$APP_DIR/.env.example" << 'EOF'
 APP_NAME="Minha Aplicação"
 APP_ENV=production
 APP_KEY=
@@ -236,7 +313,8 @@ REDIS_PASSWORD=null
 REDIS_PORT=6379
 EOF
 
-    success "Estrutura Laravel criada"
+        success "Estrutura Laravel criada"
+        fi
     fi
 fi
 
@@ -354,7 +432,7 @@ fi
 if [ "$IS_LARAVEL" = true ]; then
     echo "   5. Configure o arquivo .env da aplicação"
     echo "   6. Execute as migrações Laravel:"
-    echo "      docker exec laravel-$PHP_VERSION bash -c \"cd /var/www/html/$PHP_VERSION/$APP_NAME && php artisan migrate\""
+    echo "      docker exec app-$PHP_VERSION bash -c \"cd /var/www/html/$PHP_VERSION/$APP_NAME && php artisan migrate\""
 fi
 
 echo ""

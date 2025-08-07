@@ -29,8 +29,8 @@ services:
       MYSQL_USER: sistemas_user
       MYSQL_PASSWORD: sistemas_pass
     volumes:
-      - /sistemas/mysql8/data:/var/lib/mysql
-      - /sistemas/mysql8/conf:/etc/mysql/conf.d
+      - mysql8-data:/var/lib/mysql
+      - mysql8-conf:/etc/mysql/conf.d
       - ./mysql/init:/docker-entrypoint-initdb.d
     ports:
       - "3306:3306"
@@ -49,22 +49,22 @@ services:
       MYSQL_USER: sistemas_legacy_user
       MYSQL_PASSWORD: sistemas_legacy_pass
     volumes:
-      - /sistemas/mysql57/data:/var/lib/mysql
-      - /sistemas/mysql57/conf:/etc/mysql/conf.d
+      - mysql57-data:/var/lib/mysql
+      - mysql57-conf:/etc/mysql/conf.d
     ports:
       - "3307:3306"
     networks:
       - sistemas-network
     restart: unless-stopped
 
-  # Aplicação Laravel com PHP 8.4
+  # Aplicação com PHP 8.4
   app-php84:
     build:
       context: ./docker/php84
       dockerfile: Dockerfile
-    container_name: laravel-php84
+    container_name: app-php84
     volumes:
-      - /sistemas/apps/php84:/var/www/html
+      - apps-php84-data:/var/www/html
       - ./logs/php84:/var/log/php
     depends_on:
       - mysql8
@@ -74,14 +74,14 @@ services:
     environment:
       - PHP_VERSION=8.4
 
-  # Aplicação Laravel com PHP 7.4
+  # Aplicação com PHP 7.4
   app-php74:
     build:
       context: ./docker/php74
       dockerfile: Dockerfile
-    container_name: laravel-php74
+    container_name: app-php74
     volumes:
-      - /sistemas/apps/php74:/var/www/html
+      - apps-php74-data:/var/www/html
       - ./logs/php74:/var/log/php
     depends_on:
       - mysql8
@@ -91,14 +91,14 @@ services:
     environment:
       - PHP_VERSION=7.4
 
-  # Aplicação Laravel com PHP 5.6 (Legado)
+  # Aplicação com PHP 5.6 (Legado)
   app-php56:
     build:
       context: ./docker/php56
       dockerfile: Dockerfile
-    container_name: laravel-php56
+    container_name: app-php56
     volumes:
-      - /sistemas/apps/php56:/var/www/html
+      - apps-php56-data:/var/www/html
       - ./logs/php56:/var/log/php
     depends_on:
       - mysql57
@@ -115,7 +115,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - /sistemas/redis/data:/data
+      - redis-data:/data
     networks:
       - sistemas-network
     restart: unless-stopped
@@ -129,3 +129,8 @@ volumes:
   mysql8-data:
   mysql57-data:
   redis-data:
+  mysql8-conf:
+  mysql57-conf:
+  apps-php84-data:
+  apps-php74-data:
+  apps-php56-data:

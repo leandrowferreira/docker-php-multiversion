@@ -4,8 +4,9 @@
 # Detecta automaticamente o ambiente e configura a estrutura necessária
 # 
 # Uso:
-#   ./init.sh           # Configurar estrutura E iniciar containers
-#   ./init.sh --setup   # Apenas configurar estrutura (não iniciar containers)
+#   ./start.sh             # Configurar estrutura E iniciar containers
+#   ./start.sh --setup     # Apenas configurar estrutura (não iniciar containers)
+#   ./start.sh --autostart # Configurar auto-start do sistema (systemd)
 
 set -e
 
@@ -23,9 +24,53 @@ info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
 
 # Verificar argumentos
 SETUP_ONLY=false
-if [ "$1" = "--setup" ]; then
-    SETUP_ONLY=true
-fi
+AUTOSTART=false
+# Verificar argumentos
+SETUP_ONLY=false
+AUTOSTART=false
+
+show_help() {
+    echo "🚀 Script de Inicialização do Sistema de Containers"
+    echo "==================================================="
+    echo ""
+    echo "Uso: $0 [opção]"
+    echo ""
+    echo "Opções:"
+    echo "  (sem opção)     Configurar estrutura E iniciar containers"
+    echo "  --setup         Apenas configurar estrutura (não iniciar containers)"
+    echo "  --autostart     Configurar auto-start do sistema com systemd"
+    echo "  -h, --help      Mostrar esta ajuda"
+    echo ""
+    echo "Exemplos:"
+    echo "  $0                    # Configuração completa + iniciar containers"
+    echo "  $0 --setup           # Apenas preparar estrutura"
+    echo "  $0 --autostart       # Configurar para iniciar automaticamente no boot"
+    echo ""
+    echo "ℹ️  O script detecta automaticamente se está em desenvolvimento ou produção"
+    echo ""
+}
+
+case "$1" in
+    --setup)
+        SETUP_ONLY=true
+        ;;
+    --autostart)
+        AUTOSTART=true
+        ;;
+    -h|--help)
+        show_help
+        exit 0
+        ;;
+    "")
+        # Sem argumentos - comportamento padrão
+        ;;
+    *)
+        echo "❌ Opção desconhecida: $1"
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac
 
 echo "🚀 Inicializando Sistema de Containers"
 echo "======================================"
@@ -180,7 +225,7 @@ start_containers() {
     $COMPOSE_CMD $COMPOSE_FILES down --remove-orphans 2>/dev/null || true
     
     # Remover containers com nomes conflitantes (se existirem)
-    conflicting_containers=("nginx-proxy" "mysql8" "mysql57" "redis-cache" "laravel-php84" "laravel-php74" "laravel-php56")
+    conflicting_containers=("nginx-proxy" "mysql8" "mysql57" "redis-cache" "app-php84" "app-php74" "app-php56")
     for container in "${conflicting_containers[@]}"; do
         if docker ps -a --format "{{.Names}}" | grep -q "^$container$"; then
             warning "Removendo container conflitante: $container"
@@ -223,7 +268,7 @@ check_essential_files() {
         "docker-compose.yml"
         "nginx/nginx.conf"
         "nginx/templates/php84-http-template.conf"
-        "scripts/add-app.sh"
+        "scripts/app-create.sh"
     )
     
     missing_files=()
@@ -244,8 +289,123 @@ check_essential_files() {
     success "Todos os arquivos essenciais presentes"
 }
 
+# Configurar auto-start com systemd
+setup_autostart() {
+    info "Configurando auto-start do sistema..."
+    
+    # Verificar se é ambiente de produção
+    if [ "$ENV_TYPE" != "producao" ]; then
+        warning "Auto-start recomendado apenas em produção"
+        read -p "Continuar mesmo assim? (y/N): " -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            info "Auto-start cancelado"
+            return 0
+        fi
+    fi
+    
+    # Verificar se systemd está disponível
+    if ! command -v systemctl &> /dev/null; then
+        error "systemctl não está disponível. Auto-start requer systemd."
+        return 1
+    fi
+    
+    # Determinar comando do Docker Compose
+    local compose_cmd
+    if command -v docker-compose &> /dev/null; then
+        compose_cmd="docker-compose"
+    elif docker compose version &> /dev/null; then
+        compose_cmd="docker compose"
+    else
+        error "Docker Compose não está disponível"
+        return 1
+    fi
+    
+    # Determinar arquivos de configuração
+    local compose_files=""
+    if [ "$ENV_TYPE" = "desenvolvimento" ] && [ -f "docker-compose.dev.yml" ]; then
+        compose_files="-f docker-compose.yml -f docker-compose.dev.yml"
+    fi
+    
+    # Configurações do serviço
+    local service_name="sistemas-docker"
+    local service_file="/etc/systemd/system/$service_name.service"
+    local work_dir="$(realpath .)"
+    
+    info "Criando serviço systemd: $service_name"
+    info "Diretório de trabalho: $work_dir"
+    info "Comando: $compose_cmd $compose_files"
+    
+    # Criar arquivo de serviço systemd
+    sudo tee "$service_file" > /dev/null << EOF
+[Unit]
+Description=Sistemas Docker Compose Auto-Start
+Requires=docker.service
+After=docker.service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=$work_dir
+ExecStart=$compose_cmd $compose_files up -d
+ExecStop=$compose_cmd $compose_files down
+TimeoutStartSec=300
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    # Recarregar systemd
+    sudo systemctl daemon-reload
+    
+    # Habilitar o serviço
+    sudo systemctl enable "$service_name"
+    
+    success "Auto-start configurado com sucesso!"
+    echo ""
+    info "📋 Comandos de gerenciamento:"
+    echo "   sudo systemctl start $service_name    - Iniciar manualmente"
+    echo "   sudo systemctl stop $service_name     - Parar manualmente"
+    echo "   sudo systemctl status $service_name   - Ver status"
+    echo "   sudo systemctl disable $service_name  - Desabilitar auto-start"
+    echo "   sudo systemctl restart $service_name  - Reiniciar serviço"
+    echo ""
+    warning "O sistema iniciará automaticamente quando a máquina for reiniciada"
+    
+    # Testar o serviço
+    read -p "Testar o serviço agora? (y/N): " -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        info "Testando serviço..."
+        if sudo systemctl start "$service_name"; then
+            success "Serviço iniciado com sucesso!"
+            sudo systemctl status "$service_name" --no-pager -l
+        else
+            error "Falha ao iniciar serviço"
+            warning "Verifique os logs: sudo journalctl -u $service_name -f"
+        fi
+    fi
+}
+
 # Executar configuração
 main() {
+    # Modo auto-start
+    if [ "$AUTOSTART" = true ]; then
+        echo "🚀 Configurando Auto-Start do Sistema"
+        echo "====================================="
+        
+        # Detectar ambiente primeiro
+        export ENV_TYPE=$(detect_environment)
+        info "Ambiente detectado: $([ "$ENV_TYPE" = "desenvolvimento" ] && echo "DESENVOLVIMENTO" || echo "PRODUÇÃO")"
+        
+        check_essential_files
+        setup_autostart
+        return $?
+    fi
+    
     check_essential_files
     setup_directories
     setup_local_logs
@@ -300,9 +460,10 @@ main() {
     
     echo ""
     echo "🔧 Próximos passos:"
-    echo "   1. ./scripts/add-app.sh <nome> <php> <dom> # Adicionar aplicação"
-    echo "   2. ./scripts/monitor.sh                    # Monitorar sistema"
-    echo "   3. docker compose logs                     # Ver logs dos containers"
+    echo "   1. ./scripts/app-create.sh <php> <nome> <dom> # Criar aplicação"
+    echo "   2. ./scripts/app-list.sh                    # Listar aplicações"
+    echo "   3. ./scripts/monitor.sh                     # Monitorar sistema"
+    echo "   4. docker compose logs                      # Ver logs dos containers"
 }
 
 # Executar se chamado diretamente
