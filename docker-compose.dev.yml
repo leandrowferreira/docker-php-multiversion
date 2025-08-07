@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Docker Compose override para desenvolvimento local
 # Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
@@ -11,37 +9,39 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/ssl:/etc/nginx/ssl
       - ./logs/nginx:/var/log/nginx
-      # Para desenvolvimento local, mapear diretórios locais
+      # Para desenvolvimento local, mapear diretórios locais em estrutura separada
       - ./apps/php84:/var/www/html/php84
-      - ./apps/php74:/var/www/html/php74  
+      - ./apps/php74:/var/www/html/php74
       - ./apps/php56:/var/www/html/php56
 
   # MySQL 8.0 com configurações de desenvolvimento
   mysql8:
+    user: "1000:1000"
     environment:
       MYSQL_ROOT_PASSWORD: dev_root_123
       MYSQL_DATABASE: dev_sistemas_db
       MYSQL_USER: dev_user
       MYSQL_PASSWORD: dev_pass
     volumes:
-      - mysql8-dev-data:/var/lib/mysql
+      - ./mysql/data/mysql8:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
     command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=67108864
 
   # MySQL 5.7 com configurações de desenvolvimento  
   mysql57:
+    user: "1000:1000"
     environment:
-      MYSQL_ROOT_PASSWORD: dev_legacy_123
+      MYSQL_ROOT_PASSWORD: dev_root_123
       MYSQL_DATABASE: dev_legacy_db
       MYSQL_USER: dev_legacy_user
       MYSQL_PASSWORD: dev_legacy_pass
     volumes:
-      - mysql57-dev-data:/var/lib/mysql
+      - ./mysql/data/mysql57:/var/lib/mysql
 
   # Aplicações com volumes locais para desenvolvimento
   app-php84:
     volumes:
-      - ./apps/php84:/var/www/html
+      - ./apps/php84:/var/www/html/php84
       - ./logs/php84:/var/log/php
     environment:
       - PHP_VERSION=8.4
@@ -50,7 +50,7 @@ services:
 
   app-php74:
     volumes:
-      - ./apps/php74:/var/www/html
+      - ./apps/php74:/var/www/html/php74
       - ./logs/php74:/var/log/php
     environment:
       - PHP_VERSION=7.4
@@ -59,7 +59,7 @@ services:
 
   app-php56:
     volumes:
-      - ./apps/php56:/var/www/html
+      - ./apps/php56:/var/www/html/php56
       - ./logs/php56:/var/log/php
     environment:
       - PHP_VERSION=5.6
@@ -69,7 +69,7 @@ services:
   # Redis para desenvolvimento
   redis:
     volumes:
-      - redis-dev-data:/data
+      - ./redis/data:/data
 
   # phpMyAdmin para desenvolvimento (opcional)
   phpmyadmin:
@@ -87,6 +87,8 @@ services:
     restart: unless-stopped
 
 volumes:
+  # Volumes não são mais necessários em desenvolvimento
+  # Os dados são mapeados diretamente para ./data/
   mysql8-dev-data:
     driver: local
   mysql57-dev-data:  

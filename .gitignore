@@ -7,6 +7,10 @@ apps/php*/*
 # Dados dos bancos (não versionar em produção)
 /sistemas/
 
+# Dados dos bancos (desenvolvimento) - manter diretórios-raiz
+mysql/data/mysql*/*
+redis/data/*
+
 # Arquivos de ambiente
 .env
 .env.local

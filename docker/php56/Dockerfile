@@ -37,7 +37,7 @@ RUN apt-get update \
 RUN setcap "cap_net_bind_service=+ep" /usr/bin/php5.6
 
 # Configurar usuário
-RUN usermod -u 1337 www-data
+RUN usermod -u 1000 www-data
 RUN groupmod -g 1000 www-data
 
 # Configurar PHP-FPM

@@ -5,48 +5,117 @@
 
 set -e
 
+# Função para detectar ambiente
+detect_environment() {
+    # Verificar se estamos usando docker-compose.dev.yml
+    if [ -f "docker-compose.dev.yml" ] && docker compose -f docker-compose.yml -f docker-compose.dev.yml ps >/dev/null 2>&1; then
+        export ENV_TYPE="development"
+        echo "🔧 Ambiente detectado: DESENVOLVIMENTO"
+    else
+        export ENV_TYPE="production"
+        echo "🏭 Ambiente detectado: PRODUÇÃO"
+    fi
+}
+
+# Detectar ambiente
+detect_environment
+
+echo ""
 echo "🐳 Status dos Containers"
 echo "========================"
-docker-compose ps
+
+if [ "$ENV_TYPE" = "development" ]; then
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml ps --format "table {{.Name}}\t{{.Service}}\t{{.Status}}"
+else
+    docker compose -f docker-compose.yml ps --format "table {{.Name}}\t{{.Service}}\t{{.Status}}"
+fi
 
 echo ""
 echo "📊 Uso de Recursos"
 echo "=================="
-docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"
+docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 
 echo ""
 echo "💾 Uso de Disco - Volumes"
 echo "=========================="
-echo "MySQL 8.0:"
-du -sh /sistemas/mysql8/data 2>/dev/null || echo "  Diretório não encontrado"
 
-echo "MySQL 5.7:"
-du -sh /sistemas/mysql57/data 2>/dev/null || echo "  Diretório não encontrado"
+if [ "$ENV_TYPE" = "development" ]; then
+    echo "MySQL 8.0:"
+    if docker exec mysql8 du -sh /var/lib/mysql 2>/dev/null; then
+        :  # Comando executado com sucesso, não adicionar mensagem extra
+    elif [ -d "./mysql/data/mysql8" ]; then
+        echo "  Diretório existe (sem acesso para calcular tamanho)"
+    else
+        echo "  Diretório não encontrado"
+    fi
 
-echo "Redis:"
-du -sh /sistemas/redis/data 2>/dev/null || echo "  Diretório não encontrado"
+    echo "MySQL 5.7:"
+    if docker exec mysql57 du -sh /var/lib/mysql 2>/dev/null; then
+        :  # Comando executado com sucesso, não adicionar mensagem extra
+    elif [ -d "./mysql/data/mysql57" ]; then
+        echo "  Diretório existe (sem acesso para calcular tamanho)"
+    else
+        echo "  Diretório não encontrado"
+    fi
 
-echo "Aplicações:"
-du -sh /sistemas/apps/* 2>/dev/null || echo "  Nenhuma aplicação encontrada"
+    echo "Redis:"
+    if docker exec redis-cache du -sh /data 2>/dev/null; then
+        :  # Comando executado com sucesso, não adicionar mensagem extra
+    elif [ -d "./redis/data" ]; then
+        du -sh ./redis/data
+    else
+        echo "  Diretório não encontrado"
+    fi
+
+    echo "Aplicações:"
+    if ls ./apps/* >/dev/null 2>&1; then
+        du -sh ./apps/*
+    else
+        echo "  Nenhuma aplicação encontrada"
+    fi
+else
+    echo "MySQL 8.0:"
+    if [ -d "/sistemas/mysql8/data" ]; then
+        du -sh /sistemas/mysql8/data
+    else
+        echo "  Diretório não encontrado"
+    fi
+
+    echo "MySQL 5.7:"
+    if [ -d "/sistemas/mysql57/data" ]; then
+        du -sh /sistemas/mysql57/data
+    else
+        echo "  Diretório não encontrado"
+    fi
+
+    echo "Redis:"
+    if [ -d "/sistemas/redis/data" ]; then
+        du -sh /sistemas/redis/data
+    else
+        echo "  Diretório não encontrado"
+    fi
+
+    echo "Aplicações:"
+    if ls /sistemas/apps/* >/dev/null 2>&1; then
+        du -sh /sistemas/apps/*
+    else
+        echo "  Nenhuma aplicação encontrada"
+    fi
+fi
 
 echo ""
-echo "🔍 Logs Recentes (últimas 5 linhas)"
-echo "===================================="
-
-for container in nginx-proxy mysql8 mysql57 laravel-php84 laravel-php74 laravel-php56; do
-    if docker ps --format "{{.Names}}" | grep -q "^$container$"; then
-        echo "--- $container ---"
-        docker logs --tail 5 "$container" 2>/dev/null || echo "Sem logs disponíveis"
-        echo ""
-    fi
-done
-
 echo "🌐 Conexões de Rede"
 echo "==================="
 docker network ls | grep sistemas
 
 echo ""
 echo "🔄 Para mais detalhes:"
-echo "  docker-compose logs [serviço]   - Ver logs completos"
-echo "  docker exec -it [container] bash - Entrar no container"
-echo "  docker-compose restart [serviço] - Reiniciar serviço"
+if [ "$ENV_TYPE" = "development" ]; then
+    echo "  docker compose -f docker-compose.yml -f docker-compose.dev.yml logs [serviço]"
+    echo "  docker exec -it [container] bash"
+    echo "  docker compose -f docker-compose.yml -f docker-compose.dev.yml restart [serviço]"
+else
+    echo "  docker compose logs [serviço]"
+    echo "  docker exec -it [container] bash"
+    echo "  docker compose restart [serviço]"
+fi

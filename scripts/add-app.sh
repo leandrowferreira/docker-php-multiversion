@@ -153,7 +153,7 @@ info "Criando diretório: $APP_DIR"
 
 # Verificar se diretório base existe
 if [ "$ENV_TYPE" = "produção" ] && [ ! -d "/sistemas" ]; then
-    error "Diretório /sistemas não existe. Execute: scripts/setup-directories.sh"
+    error "Diretório /sistemas não existe. Execute: scripts/init.sh"
     exit 1
 elif [ "$ENV_TYPE" = "desenvolvimento" ] && [ ! -d "apps" ]; then
     error "Diretório ./apps não existe. Execute no diretório correto do projeto"
