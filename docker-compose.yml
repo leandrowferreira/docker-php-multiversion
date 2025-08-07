@@ -14,7 +14,7 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl
       - ./logs/nginx:/var/log/nginx
     depends_on:
-      - app-php81
+      - app-php84
       - app-php74
       - app-php56
     networks:

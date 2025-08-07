@@ -35,6 +35,9 @@ if [ -f "/var/www/html/artisan" ]; then
     php artisan migrate --force || true
 fi
 
-# Iniciar PHP-FPM
-echo "Iniciando PHP-FPM..."
-exec php-fpm
+# Configurar PHP-FPM para escutar na porta TCP
+sed -i 's|listen = /run/php/php5.6-fpm.sock|listen = 9000|g' /etc/php/5.6/fpm/pool.d/www.conf
+
+# Iniciar PHP-FPM 5.6
+echo "Iniciando PHP-FPM 5.6..."
+exec /usr/sbin/php-fpm5.6 --nodaemonize
