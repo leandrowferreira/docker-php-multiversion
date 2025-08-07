@@ -2,8 +2,7 @@
 nginx/conf.d/app-*.conf
 
 # Dados das aplicações (podem ser repositórios separados)
-apps/*/
-!apps/.gitkeep
+apps/php*/*
 
 # Dados dos bancos (não versionar em produção)
 /sistemas/
@@ -14,8 +13,7 @@ apps/*/
 .env.production
 
 # Logs
-logs/
-*.log
+logs/**/*.log
 
 # Certificados SSL
 nginx/ssl/*.pem
@@ -33,30 +31,6 @@ backups/
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*.sublime-*
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-*~
-.cache/
-
-# Node.js (se houver frontend)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# PHP
-vendor/
-composer.lock
 
 # Backup files
 *.bak
