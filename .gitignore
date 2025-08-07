@@ -1,0 +1,52 @@
+# Arquivos de ambiente
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+
+# Certificados SSL
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/ssl/*.crt
+
+# Dados dos bancos (não versionar em produção)
+/sistemas/
+
+# Backups
+backups/
+*.sql
+*.sql.gz
+
+# Docker
+.docker/
+
+# Aplicações (podem ser repositórios separados)
+apps/*/
+!apps/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+
+# Node.js (se houver frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# PHP
+vendor/
+composer.lock

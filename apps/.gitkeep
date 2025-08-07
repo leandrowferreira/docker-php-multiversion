@@ -1,0 +1,12 @@
+# Este diretório é para desenvolvimento local
+# 
+# Para produção, as aplicações ficam em /sistemas/apps/
+# 
+# Estrutura sugerida:
+# apps/
+# ├── php81/
+# │   └── exemplo-app/
+# ├── php74/
+# │   └── app-legada/
+# └── php56/
+#     └── sistema-muito-antigo/

@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - app-php81
+      - app-php74
+      - app-php56
+    networks:
+      - sistemas-network
+    restart: unless-stopped
+
+  # MySQL 8.0 (Versão mais recente)
+  mysql8:
+    image: mysql:8.0
+    container_name: mysql8
+    environment:
+      MYSQL_ROOT_PASSWORD: sistemas_root_2024
+      MYSQL_DATABASE: sistemas_db
+      MYSQL_USER: sistemas_user
+      MYSQL_PASSWORD: sistemas_pass
+    volumes:
+      - /sistemas/mysql8/data:/var/lib/mysql
+      - /sistemas/mysql8/conf:/etc/mysql/conf.d
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    networks:
+      - sistemas-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+  # MySQL 5.7 (Versão legada)
+  mysql57:
+    image: mysql:5.7
+    container_name: mysql57
+    environment:
+      MYSQL_ROOT_PASSWORD: sistemas_root_legacy
+      MYSQL_DATABASE: sistemas_legacy_db
+      MYSQL_USER: sistemas_legacy_user
+      MYSQL_PASSWORD: sistemas_legacy_pass
+    volumes:
+      - /sistemas/mysql57/data:/var/lib/mysql
+      - /sistemas/mysql57/conf:/etc/mysql/conf.d
+    ports:
+      - "3307:3306"
+    networks:
+      - sistemas-network
+    restart: unless-stopped
+
+  # Aplicação Laravel com PHP 8.1
+  app-php81:
+    build:
+      context: ./docker/php81
+      dockerfile: Dockerfile
+    container_name: laravel-php81
+    volumes:
+      - /sistemas/apps/php81:/var/www/html
+      - ./logs/php81:/var/log/php
+    depends_on:
+      - mysql8
+    networks:
+      - sistemas-network
+    restart: unless-stopped
+    environment:
+      - PHP_VERSION=8.1
+
+  # Aplicação Laravel com PHP 7.4
+  app-php74:
+    build:
+      context: ./docker/php74
+      dockerfile: Dockerfile
+    container_name: laravel-php74
+    volumes:
+      - /sistemas/apps/php74:/var/www/html
+      - ./logs/php74:/var/log/php
+    depends_on:
+      - mysql8
+    networks:
+      - sistemas-network
+    restart: unless-stopped
+    environment:
+      - PHP_VERSION=7.4
+
+  # Aplicação Laravel com PHP 5.6 (Legado)
+  app-php56:
+    build:
+      context: ./docker/php56
+      dockerfile: Dockerfile
+    container_name: laravel-php56
+    volumes:
+      - /sistemas/apps/php56:/var/www/html
+      - ./logs/php56:/var/log/php
+    depends_on:
+      - mysql57
+    networks:
+      - sistemas-network
+    restart: unless-stopped
+    environment:
+      - PHP_VERSION=5.6
+
+  # Redis para cache (opcional, mas recomendado para Laravel)
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - /sistemas/redis/data:/data
+    networks:
+      - sistemas-network
+    restart: unless-stopped
+
+networks:
+  sistemas-network:
+    driver: bridge
+    name: sistemas-network
+
+volumes:
+  mysql8-data:
+  mysql57-data:
+  redis-data:

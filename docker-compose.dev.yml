@@ -1,0 +1,95 @@
+version: '3.8'
+
+# Docker Compose override para desenvolvimento local
+# Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Nginx com volumes locais para desenvolvimento
+  nginx:
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./logs/nginx:/var/log/nginx
+      # Para desenvolvimento local, mapear diretórios locais
+      - ./apps/php81:/var/www/html/php81
+      - ./apps/php74:/var/www/html/php74  
+      - ./apps/php56:/var/www/html/php56
+
+  # MySQL 8.0 com configurações de desenvolvimento
+  mysql8:
+    environment:
+      MYSQL_ROOT_PASSWORD: dev_root_123
+      MYSQL_DATABASE: dev_sistemas_db
+      MYSQL_USER: dev_user
+      MYSQL_PASSWORD: dev_pass
+    volumes:
+      - mysql8-dev-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=67108864
+
+  # MySQL 5.7 com configurações de desenvolvimento  
+  mysql57:
+    environment:
+      MYSQL_ROOT_PASSWORD: dev_legacy_123
+      MYSQL_DATABASE: dev_legacy_db
+      MYSQL_USER: dev_legacy_user
+      MYSQL_PASSWORD: dev_legacy_pass
+    volumes:
+      - mysql57-dev-data:/var/lib/mysql
+
+  # Aplicações com volumes locais para desenvolvimento
+  app-php81:
+    volumes:
+      - ./apps/php81:/var/www/html
+      - ./logs/php81:/var/log/php
+    environment:
+      - PHP_VERSION=8.1
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  app-php74:
+    volumes:
+      - ./apps/php74:/var/www/html
+      - ./logs/php74:/var/log/php
+    environment:
+      - PHP_VERSION=7.4
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  app-php56:
+    volumes:
+      - ./apps/php56:/var/www/html
+      - ./logs/php56:/var/log/php
+    environment:
+      - PHP_VERSION=5.6
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  # Redis para desenvolvimento
+  redis:
+    volumes:
+      - redis-dev-data:/data
+
+  # phpMyAdmin para desenvolvimento (opcional)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin-dev
+    environment:
+      PMA_HOSTS: mysql8,mysql57
+      PMA_USER: root
+      PMA_PASSWORD: dev_root_123
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8080:80"
+    networks:
+      - sistemas-network
+    restart: unless-stopped
+
+volumes:
+  mysql8-dev-data:
+    driver: local
+  mysql57-dev-data:  
+    driver: local
+  redis-dev-data:
+    driver: local
