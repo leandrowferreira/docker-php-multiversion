@@ -41,19 +41,39 @@ make autostart
 # Exemplo: adicionar uma loja online
 make add-app APP=loja PHP=php81 DOMAIN=loja.exemplo.com
 
+# Ou com suporte a www:
+make add-app APP=loja PHP=php81 DOMAIN=loja.exemplo.com WWW=true
+
 # Colocar código da aplicação em:
 # /sistemas/apps/php81/loja/
+```
+
+### 6. Configurar SSL com Let's Encrypt
+```bash
+# Configurar certificados SSL automáticos
+make setup-letsencrypt EMAIL=seu@email.com DOMAINS="loja.exemplo.com www.loja.exemplo.com"
+```
+
+### 7. (Opcional) Migrar para estrutura organizada
+```bash
+# Para organizar melhor os diretórios
+make migrate-structure
 ```
 
 ## 🎯 Comandos Essenciais
 
 ```bash
-make help           # Ver todos os comandos disponíveis
-make status         # Ver status dos containers
-make logs           # Ver logs de todos os serviços
-make monitor        # Informações detalhadas do sistema
-make backup         # Backup dos bancos de dados
-make restart        # Reiniciar todo o sistema
+make help                    # Ver todos os comandos disponíveis
+make status                  # Ver status dos containers
+make logs                    # Ver logs de todos os serviços
+make monitor                 # Informações detalhadas do sistema
+make backup                  # Backup dos bancos de dados
+make restart                 # Reiniciar todo o sistema
+
+# Novos comandos v1.1:
+make setup-letsencrypt EMAIL=seu@email.com DOMAINS="app.com www.app.com"  # SSL automático
+make add-app APP=nome PHP=php81 DOMAIN=app.com WWW=true                   # App com www
+make migrate-structure       # Reorganizar diretórios
 ```
 
 ## 🔧 Solução de Problemas Rápida

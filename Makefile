@@ -1,6 +1,6 @@
 # Makefile para gerenciar o sistema de containers
 
-.PHONY: help setup start stop restart status logs monitor backup clean
+.PHONY: help setup start stop restart status logs monitor backup clean ssl migrate-structure
 
 # Comandos principais
 help: ## Mostra esta ajuda
@@ -15,6 +15,16 @@ setup: ## Prepara o ambiente inicial
 	cp .env.example .env
 	./scripts/generate-ssl.sh
 	@echo "✅ Ambiente preparado! Edite o arquivo .env antes de continuar."
+
+setup-letsencrypt: ## Configura Let's Encrypt SSL (usar: make setup-letsencrypt EMAIL=seu@email.com DOMAINS="exemplo.com www.exemplo.com")
+	@if [ -z "$(EMAIL)" ] || [ -z "$(DOMAINS)" ]; then \
+		echo "❌ Uso: make setup-letsencrypt EMAIL=seu@email.com DOMAINS=\"exemplo.com www.exemplo.com\""; \
+		exit 1; \
+	fi
+	./scripts/setup-letsencrypt.sh -e $(EMAIL) $(DOMAINS)
+
+migrate-structure: ## Migra para nova estrutura de diretórios organizada
+	./scripts/migrate-structure.sh
 
 start: ## Inicia todos os containers
 	@echo "🚀 Iniciando sistema..."
@@ -102,14 +112,19 @@ shell-mysql57: ## Entra no MySQL 5.7
 autostart: ## Configura auto-start do sistema
 	./scripts/setup-autostart.sh
 
-# Adicionar aplicação
-add-app: ## Adiciona nova aplicação (usar: make add-app APP=nome PHP=php81 DOMAIN=exemplo.com)
+# Adicionar aplicação com suporte a domínios e subdomínios
+add-app: ## Adiciona nova aplicação (usar: make add-app APP=nome PHP=php81 DOMAIN=exemplo.com [WWW=true])
 	@if [ -z "$(APP)" ] || [ -z "$(PHP)" ] || [ -z "$(DOMAIN)" ]; then \
 		echo "❌ Uso: make add-app APP=nome PHP=php81 DOMAIN=exemplo.com"; \
 		echo "   Versões PHP: php81, php74, php56"; \
+		echo "   Opções: WWW=true para incluir www"; \
 		exit 1; \
 	fi
-	./scripts/add-app.sh $(APP) $(PHP) $(DOMAIN)
+	@if [ "$(WWW)" = "true" ]; then \
+		./scripts/add-app.sh $(APP) $(PHP) $(DOMAIN) --www; \
+	else \
+		./scripts/add-app.sh $(APP) $(PHP) $(DOMAIN); \
+	fi
 
 # Comandos de informação
 info: ## Mostra informações do sistema
