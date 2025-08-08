@@ -46,6 +46,15 @@ show_help() {
     echo "  $0 --setup           # Apenas preparar estrutura"
     echo "  $0 --autostart       # Configurar para iniciar automaticamente no boot"
     echo ""
+    echo "🐳 Instalação Automática do Docker:"
+    echo "   Se o Docker não estiver instalado, o script detecta automaticamente"
+    echo "   o sistema operacional e instala o Docker + Docker Compose."
+    echo ""
+    echo "   Sistemas suportados:"
+    echo "   • Ubuntu/Debian - via repositório oficial Docker"
+    echo "   • CentOS/RHEL/Fedora - via yum e repositório oficial"
+    echo "   • Amazon Linux - via yum com pacotes nativos"
+    echo ""
     echo "ℹ️  O script detecta automaticamente se está em desenvolvimento ou produção"
     echo ""
 }
@@ -187,11 +196,62 @@ setup_local_logs() {
 # Configurar Docker
 setup_docker() {
     info "Configurando Docker..."
+# Verificar e configurar Docker
+check_docker() {
+    info "Verificando Docker..."
     
     # Verificar se Docker está instalado
     if ! command -v docker &> /dev/null; then
-        error "Docker não está instalado"
-        return 1
+        warning "Docker não está instalado"
+        
+        # Detectar sistema operacional
+        if [ -f /etc/os-release ]; then
+            . /etc/os-release
+            OS=$ID
+            VERSION=$VERSION_ID
+        else
+            error "Não foi possível detectar o sistema operacional"
+            return 1
+        fi
+        
+        info "Sistema detectado: $OS $VERSION"
+        info "Instalando Docker automaticamente..."
+        
+        case "$OS" in
+            ubuntu|debian)
+                install_docker_debian_ubuntu
+                ;;
+            centos|rhel|fedora)
+                install_docker_centos_rhel
+                ;;
+            amzn)
+                install_docker_amazon_linux
+                ;;
+            *)
+                error "Sistema operacional não suportado para instalação automática: $OS"
+                error "Instale o Docker manualmente: https://docs.docker.com/get-docker/"
+                return 1
+                ;;
+        esac
+    else
+        success "Docker já está instalado"
+        docker --version
+    fi
+    
+    # Verificar se usuário está no grupo docker
+    if ! groups | grep -q docker; then
+        warning "Usuário $(whoami) não está no grupo 'docker'"
+        info "Adicionando usuário ao grupo docker..."
+        sudo usermod -aG docker $(whoami)
+        warning "IMPORTANTE: Faça logout e login novamente, ou execute: newgrp docker"
+        
+        # Tentar usar newgrp se estiver disponível
+        if command -v newgrp &> /dev/null; then
+            info "Aplicando novo grupo..."
+            exec newgrp docker
+        fi
+    else
+        success "Usuário já está no grupo docker"
     fi
     
     # Habilitar auto-start (apenas em produção)
@@ -206,6 +266,7 @@ setup_docker() {
         if [ "$ENV_TYPE" = "producao" ]; then
             info "Iniciando Docker..."
             sudo systemctl start docker
+            sleep 3
         else
             warning "Inicie o Docker manualmente: sudo systemctl start docker"
         fi
@@ -214,18 +275,110 @@ setup_docker() {
     fi
 }
 
+# Instalar Docker no Debian/Ubuntu
+install_docker_debian_ubuntu() {
+    info "Instalando Docker no Debian/Ubuntu..."
+    
+    # Atualizar repositórios
+    sudo apt-get update
+    
+    # Instalar dependências
+    sudo apt-get install -y \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release
+    
+    # Adicionar chave GPG oficial do Docker
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/$OS/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    
+    # Adicionar repositório
+    echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$OS \
+        $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    
+    # Atualizar repositórios novamente
+    sudo apt-get update
+    
+    # Instalar Docker
+    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    
+    success "Docker instalado com sucesso!"
+}
+
+# Instalar Docker no CentOS/RHEL/Fedora
+install_docker_centos_rhel() {
+    info "Instalando Docker no CentOS/RHEL/Fedora..."
+    
+    # Instalar yum-utils
+    sudo yum install -y yum-utils
+    
+    # Adicionar repositório
+    sudo yum-config-manager \
+        --add-repo \
+        https://download.docker.com/linux/centos/docker-ce.repo
+    
+    # Instalar Docker
+    sudo yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    
+    # Iniciar e habilitar Docker
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    
+    success "Docker instalado com sucesso!"
+}
+
+# Instalar Docker no Amazon Linux
+install_docker_amazon_linux() {
+    info "Instalando Docker no Amazon Linux..."
+    
+    # Atualizar sistema
+    sudo yum update -y
+    
+    # Instalar Docker
+    sudo yum install -y docker
+    
+    # Iniciar e habilitar Docker
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    
+    # Instalar Docker Compose
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    
+    success "Docker instalado com sucesso!"
+}
+}
+
 # Iniciar containers
 start_containers() {
     info "Iniciando containers..."
     
     # Verificar se docker compose está disponível (v2 ou v1)
-    if command -v docker-compose &> /dev/null; then
-        COMPOSE_CMD="docker-compose"
-    elif docker compose version &> /dev/null; then
+    if docker compose version &> /dev/null; then
         COMPOSE_CMD="docker compose"
+        success "Usando Docker Compose v2 (plugin)"
+    elif command -v docker-compose &> /dev/null; then
+        COMPOSE_CMD="docker-compose"
+        success "Usando Docker Compose v1 (standalone)"
     else
-        error "Docker Compose não está disponível"
-        return 1
+        warning "Docker Compose não está disponível"
+        
+        # Tentar instalar Docker Compose standalone
+        info "Instalando Docker Compose standalone..."
+        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        
+        # Verificar se a instalação funcionou
+        if command -v docker-compose &> /dev/null; then
+            COMPOSE_CMD="docker-compose"
+            success "Docker Compose standalone instalado com sucesso!"
+        else
+            error "Falha ao instalar Docker Compose"
+            error "Instale manualmente: https://docs.docker.com/compose/install/"
+            return 1
+        fi
     fi
     
     # Determinar arquivos de configuração baseado no ambiente
