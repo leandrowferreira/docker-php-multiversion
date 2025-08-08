@@ -44,8 +44,12 @@ Sistema Docker completo para desenvolvimento e produção com suporte simultâne
 - [📊 Monitoramento e Logs](#-monitoramento-e-logs)
 - [🔒 SSL e Segurança](#-ssl-e-segurança)
   - [Comportamento de Domínios](#comportamento-de-domínios)
-  - [Configuração SSL Automática](#configuração-ssl-automática)
-  - [Certificados Let's Encrypt](#certificados-lets-encrypt)
+  - [🔐 Geração de Certificados SSL Automática](#-geração-de-certificados-ssl-automática)
+  - [🔄 Renovação Automática de Certificados](#-renovação-automática-de-certificados)
+  - [📋 Arquitetura SSL do Sistema](#-arquitetura-ssl-do-sistema)
+  - [🛡️ Configurações de Segurança SSL](#️-configurações-de-segurança-ssl)
+  - [🚨 Troubleshooting SSL](#-troubleshooting-ssl)
+  - [⚡ Configuração SSL Rápida](#-configuração-ssl-rápida)
 - [🎯 Exemplos Práticos](#-exemplos-práticos)
 - [📈 Performance](#-performance)
 - [🤝 Contribuição](#-contribuição)
@@ -480,6 +484,15 @@ php artisan route:clear
 ./scripts/app-remove.sh <php-version> <app-name>
 ```
 
+### Gerenciamento SSL
+```bash
+# Gerar certificado SSL para aplicação
+./scripts/ssl-create.sh <php-version> <app-name> [email]
+
+# Renovar certificados SSL
+./scripts/ssl-renew.sh [domain]
+```
+
 ### Exemplos Práticos
 ```bash
 # Laravel com PHP 8.4
@@ -488,8 +501,11 @@ php artisan route:clear
 # Aplicação legada com PHP 5.6
 ./scripts/app-create.sh php56 old-system legacy.local
 
-# API com PHP 7.4 e SSL
-./scripts/app-create.sh php74 api api.local --ssl
+# Adicionar SSL a aplicação existente
+./scripts/ssl-create.sh php84 blog admin@blog.local
+
+# Renovar todos os certificados
+./scripts/ssl-renew.sh
 
 # Listagem com detalhes
 ./scripts/app-list.sh --verbose
@@ -680,19 +696,215 @@ docker compose logs nginx | grep "undefined_domains"
 - **Domínios não configurados**: Retornam 404 automaticamente
 - **Proteção**: Evita vazamento de conteúdo entre aplicações
 
-### Configuração SSL Automática
-```bash
-# Adicionar SSL a uma aplicação existente
-./scripts/setup-ssl.sh meuapp meuapp.com
+### 🔐 Geração de Certificados SSL Automática
 
-# Criar aplicação já com SSL
-./scripts/app-create.sh php84 secure secure.com --ssl
+O sistema inclui geração automática de certificados SSL/TLS usando **Let's Encrypt**, com suporte completo para produção.
+
+#### **Script de Geração SSL**
+```bash
+# Sintaxe básica
+./scripts/ssl-create.sh <php_version> <app_name> [email]
+
+# Exemplos práticos
+./scripts/ssl-create.sh php84 loja admin@empresa.com
+./scripts/ssl-create.sh php74 blog
+./scripts/ssl-create.sh php56 legado suporte@site.com
 ```
 
-### Certificados Let's Encrypt
-- Renovação automática configurada
-- Suporte a múltiplos domínios
-- Redirecionamento HTTP → HTTPS automático
+#### **Pré-requisitos para SSL**
+- ✅ Domínio apontando para o servidor (DNS configurado)
+- ✅ Aplicação funcionando via HTTP primeiro
+- ✅ Portas 80 e 443 abertas no firewall/security groups
+- ✅ Sistema em produção (certificados reais só funcionam em produção)
+
+#### **O que o script SSL faz automaticamente:**
+1. 🔍 **Valida** se a aplicação existe e está acessível
+2. 🐳 **Inicia** container Certbot se necessário
+3. 📁 **Cria** estrutura de diretórios SSL com permissões corretas
+4. ⚙️ **Configura** Nginx para validação ACME challenge
+5. 🔐 **Gera** certificado Let's Encrypt (válido por 90 dias)
+6. 📋 **Atualiza** configuração Nginx para HTTPS usando templates
+7. 🔄 **Aplica** redirecionamento HTTP → HTTPS automático
+8. 🧪 **Testa** se HTTPS está funcionando corretamente
+
+#### **Templates HTTPS Automáticos**
+Cada versão PHP tem seu template HTTPS otimizado:
+- `nginx/templates/php84-https-template.conf` - PHP 8.4 + TLS 1.3
+- `nginx/templates/php74-https-template.conf` - PHP 7.4 + Headers seguros
+- `nginx/templates/php56-https-template.conf` - PHP 5.6 + Compatibilidade legada
+
+### 🔄 Renovação Automática de Certificados
+
+#### **Script de Renovação**
+```bash
+# Renovar todos os certificados
+./scripts/ssl-renew.sh
+
+# Renovar certificado específico
+./scripts/ssl-renew.sh webhook-store.com
+```
+
+#### **Configuração de Cron para Renovação Automática**
+```bash
+# Editar crontab
+crontab -e
+
+# Adicionar linha para renovação automática (verifica diariamente às 12h)
+0 12 * * * /caminho/para/docker-php-multiversion/scripts/ssl-renew.sh >> /var/log/ssl-renewal.log 2>&1
+```
+
+### 📋 Arquitetura SSL do Sistema
+
+#### **Containers e Volumes**
+```yaml
+# Container Certbot para Let's Encrypt
+certbot:
+  image: certbot/certbot
+  volumes:
+    - ./nginx/ssl/letsencrypt:/etc/letsencrypt
+    - ./nginx/ssl/lib:/var/lib/letsencrypt  
+    - ./nginx/ssl/www:/var/www/certbot
+
+# Nginx com volumes SSL
+nginx:
+  volumes:
+    - ./nginx/ssl/letsencrypt:/etc/letsencrypt
+    - ./nginx/ssl/www:/var/www/certbot
+```
+
+#### **Estrutura de Diretórios SSL**
+```
+nginx/ssl/
+├── letsencrypt/          # Certificados Let's Encrypt
+│   └── live/            
+│       └── domain.com/   # Certificados específicos do domínio
+│           ├── fullchain.pem
+│           └── privkey.pem
+├── lib/                  # Dados do Certbot
+├── www/                  # Webroot para ACME challenge
+└── cert.pem             # Certificados desenvolvimento (auto-assinados)
+    key.pem
+```
+
+### 🛡️ Configurações de Segurança SSL
+
+#### **Protocolos e Ciphers**
+- **TLS 1.2 e 1.3**: Protocolos modernos e seguros
+- **Perfect Forward Secrecy**: Ciphers ECDHE preferenciais
+- **HSTS**: Strict Transport Security habilitado
+- **Security Headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection
+
+#### **Exemplo de Configuração Gerada**
+```nginx
+# Configuração HTTPS automática gerada pelo script
+server {
+    listen 443 ssl http2;
+    server_name meusite.com;
+    
+    # Certificados Let's Encrypt
+    ssl_certificate /etc/letsencrypt/live/meusite.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/meusite.com/privkey.pem;
+    
+    # Protocolos e segurança
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    
+    # Headers de segurança
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    
+    # ACME Challenge para renovação
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+}
+
+# Redirecionamento HTTP → HTTPS
+server {
+    listen 80;
+    server_name meusite.com;
+    return 301 https://$server_name$request_uri;
+}
+```
+
+### 🚨 Troubleshooting SSL
+
+#### **Problemas Comuns e Soluções**
+
+1. **"Permission denied" nos diretórios SSL**
+   ```bash
+   sudo chown -R $(whoami):$(id -gn) nginx/ssl/
+   ```
+
+2. **"Domain not accessible via HTTP"**
+   - Verificar se DNS aponta para o servidor
+   - Confirmar que aplicação está rodando (HTTP primeiro)
+   - Verificar firewall/security groups (portas 80/443)
+
+3. **"Certbot container not running"**
+   ```bash
+   docker compose up -d certbot
+   docker compose logs certbot
+   ```
+
+4. **"Template HTTPS not found"**
+   - Verificar se versão PHP é suportada (php84, php74, php56)
+   - Confirmar que templates existem em `nginx/templates/`
+
+5. **Certificado não renova automaticamente**
+   ```bash
+   # Testar renovação manual
+   ./scripts/ssl-renew.sh
+   
+   # Verificar logs
+   docker compose logs certbot
+   ```
+
+### ⚡ Configuração SSL Rápida
+
+#### **Cenário 1: Nova aplicação com SSL**
+```bash
+# 1. Criar aplicação
+./scripts/app-create.sh php84 loja meusite.com
+
+# 2. Aguardar DNS propagar e aplicação estar acessível
+curl http://meusite.com  # Deve retornar 200
+
+# 3. Gerar SSL
+./scripts/ssl-create.sh php84 loja admin@meusite.com
+```
+
+#### **Cenário 2: Adicionar SSL a aplicação existente**
+```bash
+# SSL em aplicação já funcionando
+./scripts/ssl-create.sh php74 blog-existente contato@blog.com
+```
+
+### 🔒 Configuração SSL Automática
+```bash
+# Adicionar SSL a uma aplicação existente
+./scripts/ssl-create.sh php84 meuapp admin@meuapp.com
+
+# Criar aplicação já com SSL (primeiro HTTP, depois SSL)
+./scripts/app-create.sh php84 secure secure.com
+# Aguardar aplicação estar acessível via HTTP
+./scripts/ssl-create.sh php84 secure admin@secure.com
+```
+
+### 📊 Status e Monitoramento SSL
+```bash
+# Verificar certificados instalados
+docker compose exec certbot certbot certificates
+
+# Verificar validade de certificado específico
+openssl s_client -connect meusite.com:443 -servername meusite.com | openssl x509 -noout -dates
+
+# Logs do processo SSL
+docker compose logs certbot
+docker compose logs nginx | grep ssl
+```
 
 ## 🎯 Exemplos Práticos
 
