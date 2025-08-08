@@ -123,10 +123,14 @@ fi
 
 # Criar diretórios necessários
 info "📁 Criando estrutura de diretórios..."
-mkdir -p nginx/ssl/letsencrypt
-mkdir -p nginx/ssl/lib
-mkdir -p nginx/ssl/www
-mkdir -p nginx/ssl/live/$DOMAIN
+
+# Criar diretórios SSL com permissões corretas
+sudo mkdir -p nginx/ssl/letsencrypt nginx/ssl/lib nginx/ssl/www nginx/ssl/live
+sudo chown -R $(whoami):$(id -gn) nginx/ssl/letsencrypt nginx/ssl/lib nginx/ssl/www nginx/ssl/live
+sudo chmod -R 755 nginx/ssl/letsencrypt nginx/ssl/lib nginx/ssl/www nginx/ssl/live
+
+# Criar diretório específico do domínio
+mkdir -p "nginx/ssl/live/$DOMAIN"
 
 # Configurar Nginx para validação ACME (webroot)
 info "⚙️  Configurando Nginx para validação ACME..."
