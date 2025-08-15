@@ -33,6 +33,13 @@ if [ -f "/var/www/html/artisan" ]; then
     echo "Executando migrações..."
     cd /var/www/html
     php artisan migrate --force || true
+    
+    # Configurar cron para Laravel Scheduler se existir
+    if [ -f "/var/www/html/artisan" ]; then
+        echo "Configurando Laravel Scheduler..."
+        echo "* * * * * cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1" | crontab -u www-data -
+        service cron start
+    fi
 fi
 
 # Iniciar PHP-FPM
