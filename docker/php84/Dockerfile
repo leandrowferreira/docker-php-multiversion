@@ -32,19 +32,19 @@ RUN apt-get update && apt-get install -y \
     fswatch \
     zbar-tools \
     sqlite3 \
+    libsqlite3-dev \
     libcap2-bin \
-    mysql-client \
-    libc-client-dev \
+    mariadb-client \
     libkrb5-dev \
     libldap2-dev \
     libmagickwand-dev \
+    libcurl4-openssl-dev \
     && apt-get -y autoremove \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Instalar extensões PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
@@ -59,13 +59,11 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         opcache \
         soap \
         intl \
-        imap \
         ldap \
         xml \
         curl \
         fileinfo \
-        session \
-        hash
+        session
 
 # Instalar extensões via PECL
 RUN pecl install redis igbinary msgpack imagick \

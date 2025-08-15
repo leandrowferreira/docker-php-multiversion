@@ -25,9 +25,7 @@ info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
 # Verificar argumentos
 SETUP_ONLY=false
 AUTOSTART=false
-# Verificar argumentos
-SETUP_ONLY=false
-AUTOSTART=false
+BUILD_CONTAINERS=false
 
 show_help() {
     echo "🚀 Script de Inicialização do Sistema de Containers"
@@ -38,12 +36,14 @@ show_help() {
     echo "Opções:"
     echo "  (sem opção)     Configurar estrutura E iniciar containers"
     echo "  --setup         Apenas configurar estrutura (não iniciar containers)"
+    echo "  --build         Rebuildar containers (com --no-cache) e iniciar"
     echo "  --autostart     Configurar auto-start do sistema com systemd"
     echo "  -h, --help      Mostrar esta ajuda"
     echo ""
     echo "Exemplos:"
     echo "  $0                    # Configuração completa + iniciar containers"
     echo "  $0 --setup           # Apenas preparar estrutura"
+    echo "  $0 --build           # Rebuildar containers e iniciar"
     echo "  $0 --autostart       # Configurar para iniciar automaticamente no boot"
     echo ""
     echo "🐳 Instalação Automática do Docker:"
@@ -62,6 +62,9 @@ show_help() {
 case "$1" in
     --setup)
         SETUP_ONLY=true
+        ;;
+    --build)
+        BUILD_CONTAINERS=true
         ;;
     --autostart)
         AUTOSTART=true
@@ -404,6 +407,19 @@ start_containers() {
             docker rm -f "$container" 2>/dev/null || true
         fi
     done
+    
+    # Verificar se deve buildar containers
+    if [ "$BUILD_CONTAINERS" = true ]; then
+        info "🔨 Buildando containers com --no-cache..."
+        info "Executando: $COMPOSE_CMD $COMPOSE_FILES build --no-cache"
+        if $COMPOSE_CMD $COMPOSE_FILES build --no-cache; then
+            success "Build concluído com sucesso!"
+        else
+            error "Falha no build dos containers!"
+            error "Verifique os logs acima para identificar o problema"
+            return 1
+        fi
+    fi
     
     # Iniciar containers
     info "Executando: $COMPOSE_CMD $COMPOSE_FILES up -d"

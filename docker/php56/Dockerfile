@@ -26,7 +26,7 @@ RUN apt-get update \
     php5.6-intl php5.6-readline \
     php5.6-ldap \
     php5.6-msgpack php5.6-igbinary php5.6-mcrypt \
-    php5.6-json php5.6-openssl \
+    php5.6-json \
     && curl -sLS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
     && apt-get update \
     && apt-get install -y mysql-client \
