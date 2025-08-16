@@ -156,7 +156,14 @@ get_container_status() {
 # Verificar configuração do Nginx
 get_nginx_status() {
     local app_name="$1"
-    local nginx_conf="nginx/conf.d/app-$app_name.conf"
+    
+    # Detectar ambiente para determinar caminho
+    local env_type=$(detect_environment)
+    if [ "$env_type" = "desenvolvimento" ]; then
+        local nginx_conf="nginx/conf.d/app-$app_name.conf"
+    else
+        local nginx_conf="/sistemas/nginx/conf.d/app-$app_name.conf"
+    fi
     
     if [ -f "$nginx_conf" ]; then
         # Verificar se o nginx está rodando e se a configuração está carregada
@@ -178,7 +185,14 @@ get_nginx_status() {
 # Obter domínios configurados
 get_domains() {
     local app_name="$1"
-    local nginx_conf="nginx/conf.d/app-$app_name.conf"
+    
+    # Detectar ambiente para determinar caminho
+    local env_type=$(detect_environment)
+    if [ "$env_type" = "desenvolvimento" ]; then
+        local nginx_conf="nginx/conf.d/app-$app_name.conf"
+    else
+        local nginx_conf="/sistemas/nginx/conf.d/app-$app_name.conf"
+    fi
     
     if [ -f "$nginx_conf" ]; then
         domains=$(grep -o 'server_name [^;]*' "$nginx_conf" | sed 's/server_name //' | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')

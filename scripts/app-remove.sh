@@ -123,15 +123,17 @@ if [ -f "docker-compose.dev.yml" ] && [ -d "apps" ]; then
     APP_DIR="./apps/$PHP_VERSION/$APP_NAME"
     ENV_TYPE="desenvolvimento"
     info "Ambiente detectado: DESENVOLVIMENTO"
+    NGINX_BASE="nginx/conf.d"
 else
     # Ambiente de produção
     APP_DIR="/sistemas/apps/$PHP_VERSION/$APP_NAME"
     ENV_TYPE="produção"
+    NGINX_BASE="/sistemas/nginx/conf.d"
     info "Ambiente detectado: PRODUÇÃO"
 fi
 
-# Configuração Nginx
-NGINX_CONF="nginx/conf.d/app-$APP_NAME.conf"
+# Configuração Nginx baseada no ambiente
+NGINX_CONF="$NGINX_BASE/app-$APP_NAME.conf"
 
 # Verificar se a aplicação existe
 if [ ! -d "$APP_DIR" ] && [ ! -f "$NGINX_CONF" ]; then
@@ -216,7 +218,7 @@ fi
 
 # 4. Remover host do /etc/hosts (apenas desenvolvimento)
 if [ "$ENV_TYPE" = "desenvolvimento" ]; then
-    DOMAIN=$(grep -l "server_name.*$APP_NAME.docker.local" nginx/conf.d/*.conf 2>/dev/null | head -1 | xargs grep "server_name" | awk '{print $2}' | sed 's/;//' || echo "")
+    DOMAIN=$(grep -l "server_name.*$APP_NAME.docker.local" $NGINX_BASE/*.conf 2>/dev/null | head -1 | xargs grep "server_name" | awk '{print $2}' | sed 's/;//' || echo "")
     if [ -n "$DOMAIN" ]; then
         info "Removendo host do /etc/hosts: $DOMAIN"
         sudo sed -i "/127.0.0.1.*$DOMAIN/d" /etc/hosts

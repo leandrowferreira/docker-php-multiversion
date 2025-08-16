@@ -154,6 +154,8 @@ else
     if [ -d "/sistemas" ]; then
         production_dirs=(
             "/sistemas/apps"
+            "/sistemas/nginx/conf.d"
+            "/sistemas/nginx/templates"
             "/sistemas/mysql8"
             "/sistemas/mysql57"
             "/sistemas/redis"

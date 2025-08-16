@@ -68,14 +68,24 @@ if [ ! -d "/sistemas/apps/$PHP_VERSION/$APP_NAME" ] && [ ! -d "./apps/$PHP_VERSI
     exit 1
 fi
 
+# Detectar ambiente e definir caminho da configuração nginx
+if [ -f "docker-compose.dev.yml" ] && [ -d "apps" ]; then
+    # Ambiente de desenvolvimento
+    NGINX_BASE="nginx/conf.d"
+else
+    # Ambiente de produção
+    NGINX_BASE="/sistemas/nginx/conf.d"
+fi
+
 # Encontrar configuração Nginx da aplicação
 NGINX_CONFIG=""
-if [ -f "nginx/conf.d/app-$APP_NAME.conf" ]; then
-    NGINX_CONFIG="nginx/conf.d/app-$APP_NAME.conf"
-elif [ -f "nginx/conf.d/$APP_NAME.conf" ]; then
-    NGINX_CONFIG="nginx/conf.d/$APP_NAME.conf"
+if [ -f "$NGINX_BASE/app-$APP_NAME.conf" ]; then
+    NGINX_CONFIG="$NGINX_BASE/app-$APP_NAME.conf"
+elif [ -f "$NGINX_BASE/$APP_NAME.conf" ]; then
+    NGINX_CONFIG="$NGINX_BASE/$APP_NAME.conf"
 else
     error "Configuração Nginx não encontrada para: $APP_NAME"
+    error "Procurado em: $NGINX_BASE/"
     exit 1
 fi
 
