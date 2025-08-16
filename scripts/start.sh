@@ -132,10 +132,13 @@ setup_directories() {
             info "Criando estrutura /sistemas..."
             
             # Criar diretórios base
-            sudo mkdir -p /sistemas/{apps,mysql8,mysql57,redis,backups,logs}
+            sudo mkdir -p /sistemas/{apps,mysql8,mysql57,redis,nginx,backups,logs}
             
-            # Criar subdiretórios para aplicações
+            # Criar subdiretórios para aplicações PHP
             sudo mkdir -p /sistemas/apps/{php84,php74,php56}
+            
+            # Criar subdiretórios para nginx
+            sudo mkdir -p /sistemas/nginx/{conf.d,templates,ssl}
             
             # Criar diretórios para bancos de dados
             sudo mkdir -p /sistemas/mysql8/{data,conf,logs}
@@ -144,7 +147,7 @@ setup_directories() {
             # Criar diretório para Redis
             sudo mkdir -p /sistemas/redis/data
             
-            # Ajustar permissões
+            # Ajustar permissões base
             sudo chown -R $USER:$USER /sistemas
             sudo chmod -R 755 /sistemas
             
@@ -154,7 +157,8 @@ setup_directories() {
         # Verificar estrutura completa
         missing_dirs=()
         for dir in "/sistemas/apps/php84" "/sistemas/apps/php74" "/sistemas/apps/php56" \
-                   "/sistemas/mysql8/data" "/sistemas/mysql57/data" "/sistemas/redis/data"; do
+                   "/sistemas/mysql8/data" "/sistemas/mysql57/data" "/sistemas/redis/data" \
+                   "/sistemas/nginx/conf.d" "/sistemas/nginx/templates"; do
             if [ ! -d "$dir" ]; then
                 missing_dirs+=("$dir")
             fi
@@ -168,6 +172,18 @@ setup_directories() {
             done
             sudo chown -R $USER:$USER /sistemas
         fi
+        
+        # Copiar templates nginx se não existirem
+        if [ -d "nginx/templates" ] && [ ! -d "/sistemas/nginx/templates" ] || [ -z "$(ls -A /sistemas/nginx/templates 2>/dev/null)" ]; then
+            info "Copiando templates nginx para produção..."
+            sudo cp -r nginx/templates/* /sistemas/nginx/templates/ 2>/dev/null || true
+            sudo chown -R $USER:$USER /sistemas/nginx/templates
+        fi
+        
+        # Configurar permissões específicas para aplicações PHP
+        info "Configurando permissões para aplicações PHP..."
+        sudo chown -R www-data:www-data /sistemas/apps
+        sudo chmod -R 755 /sistemas/apps
         
     else
         info "Configurando estrutura de desenvolvimento..."
@@ -633,6 +649,7 @@ main() {
         echo "   /sistemas/apps/php84     - Aplicações PHP 8.4"
         echo "   /sistemas/apps/php74     - Aplicações PHP 7.4"
         echo "   /sistemas/apps/php56     - Aplicações PHP 5.6"
+        echo "   /sistemas/nginx/conf.d   - Configurações Nginx"
         echo "   /sistemas/mysql8/data    - Dados MySQL 8.0"
         echo "   /sistemas/mysql57/data   - Dados MySQL 5.7"
         echo "   /sistemas/redis/data     - Dados Redis"
@@ -641,6 +658,7 @@ main() {
         echo "   ./apps/php84             - Aplicações PHP 8.4"
         echo "   ./apps/php74             - Aplicações PHP 7.4"
         echo "   ./apps/php56             - Aplicações PHP 5.6"
+        echo "   ./nginx/conf.d           - Configurações Nginx"
         echo "   ./mysql/data/mysql8      - Dados MySQL 8.0"
         echo "   ./mysql/data/mysql57     - Dados MySQL 5.7"
         echo "   ./redis/data             - Dados Redis"
@@ -649,9 +667,9 @@ main() {
     echo ""
     echo "🔧 Próximos passos:"
     echo "   1. ./scripts/app-create.sh <php> <nome> <dom> # Criar aplicação"
-    echo "   2. ./scripts/app-list.sh                    # Listar aplicações"
-    echo "   3. ./scripts/monitor.sh                     # Monitorar sistema"
-    echo "   4. docker compose logs                      # Ver logs dos containers"
+    echo "   2. ./scripts/app-remove.sh <nome>             # Remover aplicação"
+    echo "   3. ./scripts/monitor.sh                       # Monitorar sistema"
+    echo "   4. docker compose logs                        # Ver logs dos containers"
 }
 
 # Executar se chamado diretamente

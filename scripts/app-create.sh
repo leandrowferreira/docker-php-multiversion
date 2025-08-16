@@ -324,22 +324,59 @@ if [ "$INCLUDE_WWW" = true ]; then
     DOMAINS="$DOMAIN www.$DOMAIN"
 fi
 
-# Criar configuração do Nginx usando templates
-NGINX_CONF="nginx/conf.d/app-$APP_NAME.conf"
+# Definir caminhos baseado no ambiente
+if [ "$ENV_TYPE" = "produção" ]; then
+    NGINX_CONF="/sistemas/nginx/conf.d/app-$APP_NAME.conf"
+    TEMPLATE_BASE="/sistemas/nginx/templates"
+else
+    NGINX_CONF="nginx/conf.d/app-$APP_NAME.conf"
+    TEMPLATE_BASE="nginx/templates"
+fi
 
 # Escolher template baseado na configuração SSL
 if [ "$NO_SSL" = true ]; then
-    TEMPLATE_FILE="nginx/templates/$PHP_VERSION-http-template.conf"
+    TEMPLATE_FILE="$TEMPLATE_BASE/$PHP_VERSION-http-template.conf"
 else
-    TEMPLATE_FILE="nginx/templates/$PHP_VERSION-https-template.conf"
+    TEMPLATE_FILE="$TEMPLATE_BASE/$PHP_VERSION-https-template.conf"
 fi
 
 info "Criando configuração Nginx: $NGINX_CONF"
 info "Usando template: $TEMPLATE_FILE"
 
+# Verificar e criar diretórios necessários
+if [ "$ENV_TYPE" = "produção" ]; then
+    # Criar estrutura nginx em produção se não existir
+    if [ ! -d "/sistemas/nginx" ]; then
+        info "Criando estrutura nginx em produção..."
+        sudo mkdir -p /sistemas/nginx/{conf.d,templates,ssl}
+        sudo chown -R $USER:$USER /sistemas/nginx
+        
+        # Copiar templates se não existirem
+        if [ -d "nginx/templates" ] && [ ! -d "/sistemas/nginx/templates" ]; then
+            info "Copiando templates nginx..."
+            sudo cp -r nginx/templates /sistemas/nginx/
+            sudo chown -R $USER:$USER /sistemas/nginx/templates
+        fi
+    fi
+    
+    # Verificar se diretório conf.d existe
+    if [ ! -d "/sistemas/nginx/conf.d" ]; then
+        sudo mkdir -p /sistemas/nginx/conf.d
+        sudo chown -R $USER:$USER /sistemas/nginx/conf.d
+    fi
+fi
+
 # Verificar se o template existe
 if [ ! -f "$TEMPLATE_FILE" ]; then
     error "Template não encontrado: $TEMPLATE_FILE"
+    
+    # Sugestão de solução baseada no ambiente
+    if [ "$ENV_TYPE" = "produção" ]; then
+        echo ""
+        warning "Para resolver em produção:"
+        echo "  1. Copie os templates: sudo cp -r nginx/templates /sistemas/nginx/"
+        echo "  2. Execute novamente o comando"
+    fi
     exit 1
 fi
 

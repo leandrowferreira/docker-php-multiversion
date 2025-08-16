@@ -7,12 +7,16 @@ services:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
+      - /sistemas/nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/ssl:/etc/nginx/ssl
       - ./nginx/ssl/letsencrypt:/etc/letsencrypt
       - ./nginx/ssl/www:/var/www/certbot
       - ./logs/nginx:/var/log/nginx
+      # Mapear diretórios das aplicações em produção
+      - /sistemas/apps/php84:/var/www/html/php84
+      - /sistemas/apps/php74:/var/www/html/php74
+      - /sistemas/apps/php56:/var/www/html/php56
     depends_on:
       - app-php84
       - app-php74
@@ -66,7 +70,7 @@ services:
       dockerfile: Dockerfile
     container_name: app-php84
     volumes:
-      - apps-php84-data:/var/www/html
+      - /sistemas/apps/php84:/var/www/html/php84
       - ./logs/php84:/var/log/php
     depends_on:
       - mysql8
@@ -83,7 +87,7 @@ services:
       dockerfile: Dockerfile
     container_name: app-php74
     volumes:
-      - apps-php74-data:/var/www/html
+      - /sistemas/apps/php74:/var/www/html/php74
       - ./logs/php74:/var/log/php
     depends_on:
       - mysql8
@@ -100,7 +104,7 @@ services:
       dockerfile: Dockerfile
     container_name: app-php56
     volumes:
-      - apps-php56-data:/var/www/html
+      - /sistemas/apps/php56:/var/www/html/php56
       - ./logs/php56:/var/log/php
     depends_on:
       - mysql57
@@ -146,6 +150,3 @@ volumes:
   redis-data:
   mysql8-conf:
   mysql57-conf:
-  apps-php84-data:
-  apps-php74-data:
-  apps-php56-data:
